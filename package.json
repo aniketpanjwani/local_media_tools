@@ -1,0 +1,12 @@
+{
+  "name": "newsletter-events-js",
+  "version": "0.1.0",
+  "description": "Node.js components for newsletter-events plugin",
+  "type": "module",
+  "scripts": {
+    "scrape-facebook": "bun run scripts/scrape_facebook.js"
+  },
+  "dependencies": {
+    "facebook-event-scraper": "^0.2.6"
+  }
+}

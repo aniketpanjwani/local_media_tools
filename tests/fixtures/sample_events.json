@@ -1,0 +1,35 @@
+{
+  "events": [
+    {
+      "title": "Live Music: Blue Ranger Jake",
+      "venue": {
+        "name": "The Avalon Lounge",
+        "city": "Catskill",
+        "state": "NY",
+        "instagram_handle": "theavalonlounge"
+      },
+      "event_date": "2025-12-15",
+      "start_time": "20:00:00",
+      "source": "instagram",
+      "category": "music",
+      "description": "Great local act performing originals and covers."
+    },
+    {
+      "title": "Jazz Night",
+      "venue": {
+        "name": "Colony Woodstock",
+        "city": "Woodstock",
+        "state": "NY",
+        "instagram_handle": "colonywoodstock"
+      },
+      "event_date": "2025-12-16",
+      "start_time": "19:00:00",
+      "source": "facebook",
+      "category": "music",
+      "description": "Weekly jazz night with local musicians."
+    }
+  ],
+  "week_start": "2025-12-15",
+  "week_end": "2025-12-21",
+  "schema_version": "1.0.0"
+}

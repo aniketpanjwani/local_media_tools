@@ -1,0 +1,43 @@
+newsletter:
+  name: "My Local Events"
+  region: "Hudson Valley, NY"
+  week_start: "tuesday"  # Newsletter week runs Tue-Mon
+
+sources:
+  instagram:
+    enabled: true
+    accounts:
+      - handle: "local_venue"
+        name: "Local Venue"
+        type: "music_venue"
+        location: "Kingston, NY"
+        notes: "Live music Wed-Sun"
+      - handle: "events_aggregator"
+        name: "Events Aggregator"
+        type: "aggregator"
+        location: "Hudson Valley"
+    priority_handles:
+      - "local_venue"
+
+  facebook:
+    enabled: true
+    pages:
+      - url: "https://facebook.com/localvenue/events"
+        name: "Local Venue"
+    groups: []  # Group event scraping (may require auth)
+
+  eventbrite:
+    enabled: false  # Phase 2
+    organizers: []
+
+output:
+  template: "templates/newsletter.md.j2"
+  path: "tmp/output/"
+  include_images: true
+
+filters:
+  date_range:
+    start: "today"
+    end: "+7days"
+  categories: []  # Empty = all categories
+  exclude_keywords: ["cancelled", "postponed", "rescheduled"]
