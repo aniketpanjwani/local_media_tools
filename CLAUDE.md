@@ -19,15 +19,17 @@ cp config/sources.example.yaml config/sources.yaml
 ## Skills
 
 - **newsletter-events-setup** - Environment setup and verification
+- **newsletter-events-discover** - Find event sources for a new city/region
 - **newsletter-events-research** - Scrape events from configured sources
 - **newsletter-events-write** - Generate newsletter markdown from events
 
 ## Commands
 
-- `/setup-newsletter` - Set up or verify environment
-- `/research-events` - Scrape all configured sources
-- `/write-newsletter` - Generate newsletter from cached events
-- `/newsletter` - Run complete pipeline (research + write)
+- `/setup` - Set up or verify environment
+- `/discover [city]` - Find Instagram/Facebook sources for a city
+- `/research` - Scrape all configured sources
+- `/write` - Generate newsletter from cached events
+- `/full-run` - Run complete pipeline (research + write)
 
 ## Architecture
 

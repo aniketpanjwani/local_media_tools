@@ -4,11 +4,12 @@ A Claude Code plugin for automated local newsletter generation. Scrapes events f
 
 ## Purpose
 
-This tool automates the research and writing phases of creating a local events newsletter:
+This tool automates the full lifecycle of creating a local events newsletter:
 
-1. **Research** - Scrapes configured Instagram accounts and Facebook pages for upcoming events
-2. **Deduplicate** - Uses fuzzy matching to merge duplicate events across sources
-3. **Write** - Generates a formatted markdown newsletter grouped by day
+1. **Discover** - Find Instagram and Facebook event sources for any city
+2. **Research** - Scrape configured sources for upcoming events
+3. **Deduplicate** - Use fuzzy matching to merge duplicate events
+4. **Write** - Generate a formatted markdown newsletter grouped by day
 
 ## Requirements
 
@@ -43,6 +44,9 @@ This tool automates the research and writing phases of creating a local events n
 Run commands via Claude Code:
 
 ```bash
+# Discover sources for a new city
+claude /discover Winnipeg, Manitoba, Canada
+
 # Full workflow: research + write
 claude /full-run
 
@@ -54,12 +58,28 @@ claude /write       # Generate newsletter from collected events
 claude /full-run "Hudson Valley Weekend Events"
 ```
 
+### Starting a New Newsletter
+
+1. **Discover sources** for your city:
+   ```bash
+   claude /discover "Portland, Oregon, USA"
+   ```
+   This searches for local venues, promoters, and event aggregators, then generates a YAML config snippet.
+
+2. **Add sources** to `config/sources.yaml`
+
+3. **Research and write**:
+   ```bash
+   claude /full-run
+   ```
+
 ## Project Structure
 
 ```
 ├── .claude/
-│   ├── commands/           # Slash commands (/research, /write, etc.)
+│   ├── commands/           # Slash commands (/discover, /research, /write, etc.)
 │   └── skills/             # Claude Code skills
+│       ├── newsletter-events-discover/   # Source discovery for new cities
 │       ├── newsletter-events-research/   # Event scraping workflows
 │       ├── newsletter-events-setup/      # Environment setup
 │       └── newsletter-events-write/      # Newsletter generation
