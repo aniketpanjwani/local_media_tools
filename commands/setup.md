@@ -82,6 +82,28 @@ grep -q "SCRAPECREATORS_API_KEY=." .env 2>/dev/null && \
 > Run `/discover [your city]` to find Instagram and Facebook event sources.
 > Example: `/discover Portland, Oregon`
 
+**Check Firecrawl API key (if web aggregators configured):**
+
+If `config/sources.yaml` includes `web_aggregators:` section with sources:
+
+```bash
+grep -q "FIRECRAWL_API_KEY=." .env 2>/dev/null && \
+  ! grep -q "FIRECRAWL_API_KEY=your_firecrawl_api_key_here" .env 2>/dev/null && \
+  echo "KEY_SET" || echo "KEY_MISSING"
+```
+
+**If Firecrawl key not set but web aggregators are configured:**
+> Firecrawl API key required for web aggregator scraping.
+>
+> 1. Sign up at https://firecrawl.dev
+> 2. Get your API key from the dashboard
+> 3. Edit `.env` and add:
+>    ```
+>    FIRECRAWL_API_KEY=your_actual_key_here
+>    ```
+>
+> Note: This is only needed if you're using web aggregator sources.
+
 ### Step 4: Summary
 
 **Human-readable output:**
@@ -93,12 +115,14 @@ Local Media Tools Setup Status
 ✅ Python dependencies installed
 ✅ Node dependencies installed
 ⚠️  API key not configured - Instagram scraping won't work
+⚠️  Firecrawl key not configured - web aggregator scraping won't work
 ⚠️  No sources configured - run /discover [city]
 
 Next steps:
 1. Add API key to .env
-2. Run /discover [city] to find event sources
-3. Run /research to start scraping
+2. Add Firecrawl key to .env (if using web aggregators)
+3. Run /discover [city] to find event sources
+4. Run /research to start scraping
 ```
 
 **JSON output (with --json flag):**
@@ -112,20 +136,22 @@ python scripts/validate_setup.py
 This returns structured JSON:
 ```json
 {
-  "status": "partial",
-  "checks": {
-    "uv_installed": {"passed": true, "version": "0.5.1"},
-    "bun_installed": {"passed": true, "version": "1.1.34"},
-    "python_deps": {"passed": true},
-    "node_deps": {"passed": true},
-    "api_key_set": {"passed": false, "action": "Add SCRAPECREATORS_API_KEY to .env"},
-    "sources_configured": {"passed": false, "action": "Run /discover [city]"}
+  "plugin_root": "/path/to/plugin",
+  "runtimes": {
+    "uv": {"installed": true, "version": "uv 0.5.1"},
+    "bun": {"installed": true, "version": "1.1.34"}
   },
-  "ready": false,
-  "next_steps": [
-    "Add API key to .env",
-    "Run /discover [city] to find event sources"
-  ]
+  "config": {
+    "env_exists": true,
+    "api_key": {"configured": true},
+    "firecrawl_key": {"required": false, "configured": true},
+    "sources_yaml_exists": true
+  },
+  "directories": {
+    "tmp_extraction": true,
+    "tmp_output": true
+  },
+  "ready": true
 }
 ```
 
@@ -139,4 +165,5 @@ This returns structured JSON:
 | bun install fails | Show error, suggest `rm -rf node_modules && bun install` |
 | .env missing | Copy from .env.example, then continue |
 | API key missing | Warn but continue (optional for Facebook-only users) |
+| Firecrawl key missing | Warn but continue (only needed for web aggregators) |
 | sources.yaml missing | Copy from template, guide to /discover |

@@ -4,6 +4,7 @@
 Read before proceeding:
 - `references/scrapecreators-api.md`
 - `references/facebook-scraper-api.md`
+- `references/firecrawl-api.md`
 - `references/event-detection.md`
 </required_reading>
 
@@ -36,16 +37,26 @@ if config.sources.facebook.enabled:
     # Collect all Facebook events
 ```
 
-## Step 4: Combine and Deduplicate
+## Step 4: Run Web Aggregator Research
+
+If web aggregators are enabled:
+
+```python
+if config.sources.web_aggregators.enabled and config.sources.web_aggregators.sources:
+    # Follow research-web-aggregator.md workflow
+    # Collect all web aggregator events
+```
+
+## Step 5: Combine and Deduplicate
 
 ```python
 from scripts.deduplicate import deduplicate_events
 
-all_events = instagram_events + facebook_events
+all_events = instagram_events + facebook_events + web_aggregator_events
 deduplicated = deduplicate_events(all_events, threshold=0.75)
 ```
 
-## Step 5: Save Combined Results
+## Step 6: Save Combined Results
 
 ```python
 from schemas.storage import EventStorage
@@ -67,7 +78,7 @@ storage = EventStorage("tmp/extraction/events.json")
 storage.save(collection)
 ```
 
-## Step 6: Report Summary
+## Step 7: Report Summary
 
 Print summary of research:
 - Total events found per source
@@ -80,6 +91,7 @@ Print summary of research:
 Full research complete when:
 - [ ] Instagram research complete (if enabled)
 - [ ] Facebook research complete (if enabled)
+- [ ] Web aggregator research complete (if enabled)
 - [ ] Events deduplicated across sources
 - [ ] Combined events saved to `tmp/extraction/events.json`
 - [ ] Summary reported to user

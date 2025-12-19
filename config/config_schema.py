@@ -69,12 +69,37 @@ class EventbriteConfig(BaseModel):
     organizers: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class WebAggregatorSource(BaseModel):
+    """Configuration for a web aggregator source."""
+
+    url: str = Field(..., description="Base URL of the event aggregator")
+    name: str = Field(..., description="Human-readable name for this source")
+    source_type: Literal["calendar", "listing", "venue"] = "listing"
+    event_url_pattern: str | None = Field(
+        None,
+        description="Glob pattern to filter event URLs (e.g., '/events/*')",
+    )
+    max_pages: int = Field(50, ge=1, le=200)
+    extraction_hints: str | None = Field(
+        None,
+        description="Hints for LLM extraction (e.g., 'Events are in cards with .event-item class')",
+    )
+
+
+class WebAggregatorConfig(BaseModel):
+    """Web aggregator source configuration."""
+
+    enabled: bool = True
+    sources: list[WebAggregatorSource] = Field(default_factory=list)
+
+
 class SourcesConfig(BaseModel):
     """All event sources configuration."""
 
     instagram: InstagramConfig = Field(default_factory=InstagramConfig)
     facebook: FacebookConfig = Field(default_factory=FacebookConfig)
     eventbrite: EventbriteConfig = Field(default_factory=EventbriteConfig)
+    web_aggregators: WebAggregatorConfig = Field(default_factory=WebAggregatorConfig)
 
 
 class OutputConfig(BaseModel):

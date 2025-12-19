@@ -40,6 +40,20 @@ sources:
     enabled: false  # Phase 2
     organizers: []
 
+  # Web aggregator sources (event listing websites)
+  # Requires FIRECRAWL_API_KEY in .env
+  web_aggregators:
+    enabled: true
+    sources: []
+    # Example:
+    # sources:
+    #   - url: "https://example.com/events"
+    #     name: "Local Events Calendar"
+    #     source_type: "listing"  # calendar, listing, or venue
+    #     event_url_pattern: "/events/*"  # Optional: filter URLs
+    #     max_pages: 50
+    #     extraction_hints: "Events are displayed as cards with date, title, and venue"
+
 output:
   template: "templates/newsletter.md.j2"
   path: "tmp/output/"

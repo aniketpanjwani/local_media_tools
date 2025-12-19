@@ -20,6 +20,7 @@ class EventSource(str, Enum):
     FACEBOOK = "facebook"
     EVENTBRITE = "eventbrite"
     MANUAL = "manual"
+    WEB_AGGREGATOR = "web_aggregator"
 
 
 class EventCategory(str, Enum):

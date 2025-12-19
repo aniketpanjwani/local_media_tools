@@ -45,6 +45,31 @@ def check_api_key(plugin_root: Path) -> dict:
     return {"configured": False, "reason": "SCRAPECREATORS_API_KEY not found"}
 
 
+def check_firecrawl_key(plugin_root: Path) -> dict:
+    """Check if Firecrawl API key is configured (optional - only for web aggregators)."""
+    # Check if web_aggregators is configured in sources.yaml
+    sources_file = plugin_root / "config/sources.yaml"
+    if sources_file.exists():
+        content = sources_file.read_text()
+        # Only required if web_aggregators section has actual sources
+        if "web_aggregators:" not in content or "sources: []" in content:
+            return {"required": False, "configured": True}
+
+    env_file = plugin_root / ".env"
+    if not env_file.exists():
+        return {"required": True, "configured": False, "reason": ".env missing"}
+
+    content = env_file.read_text()
+    for line in content.splitlines():
+        if line.startswith("FIRECRAWL_API_KEY="):
+            value = line.split("=", 1)[1].strip()
+            if value and value != "your_firecrawl_api_key_here":
+                return {"required": True, "configured": True}
+            return {"required": True, "configured": False, "reason": "placeholder"}
+
+    return {"required": True, "configured": False, "reason": "key not found"}
+
+
 def validate_setup(plugin_root: Path) -> dict:
     """Return complete setup status as JSON."""
     return {
@@ -56,6 +81,7 @@ def validate_setup(plugin_root: Path) -> dict:
         "config": {
             "env_exists": (plugin_root / ".env").exists(),
             "api_key": check_api_key(plugin_root),
+            "firecrawl_key": check_firecrawl_key(plugin_root),
             "sources_yaml_exists": (plugin_root / "config/sources.yaml").exists(),
         },
         "directories": {
@@ -71,11 +97,18 @@ def main():
     status = validate_setup(plugin_root)
 
     # Determine if fully ready
+    # Firecrawl key only required if web_aggregators has sources configured
+    firecrawl_ok = (
+        not status["config"]["firecrawl_key"].get("required", False)
+        or status["config"]["firecrawl_key"].get("configured", False)
+    )
+
     status["ready"] = all([
         status["runtimes"]["uv"]["installed"],
         status["runtimes"]["bun"]["installed"],
         status["config"]["api_key"]["configured"],
         status["config"]["sources_yaml_exists"],
+        firecrawl_ok,
     ])
 
     print(json.dumps(status, indent=2))

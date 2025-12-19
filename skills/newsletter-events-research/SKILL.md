@@ -32,7 +32,8 @@ What would you like to research?
 1. **Instagram** - Scrape Instagram accounts for events
 2. **Facebook Pages** - Scrape specific Facebook pages for events
 3. **Facebook Discover** - Discover events by location (requires Chrome MCP + Facebook login)
-4. **All sources** - Full research from all configured sources
+4. **Web Aggregators** - Scrape web event aggregator sites
+5. **All sources** - Full research from all configured sources
 
 **Wait for response before proceeding.**
 </intake>
@@ -43,13 +44,14 @@ What would you like to research?
 | 1, "instagram", "ig" | `workflows/research-instagram.md` |
 | 2, "facebook pages", "fb pages" | `workflows/research-facebook.md` |
 | 3, "facebook discover", "fb discover", "discover" | `workflows/research-facebook-discover.md` |
-| 4, "all", "both", "full" | `workflows/research-all.md` |
+| 4, "web", "aggregator", "websites" | `workflows/research-web-aggregator.md` |
+| 5, "all", "both", "full" | `workflows/research-all.md` |
 </routing>
 
 <reference_index>
 All domain knowledge in `references/`:
 
-**APIs:** scrapecreators-api.md, facebook-scraper-api.md
+**APIs:** scrapecreators-api.md, facebook-scraper-api.md, firecrawl-api.md
 **Detection:** event-detection.md
 **Setup:** facebook-location-setup.md (for location-based discovery)
 </reference_index>
@@ -60,6 +62,7 @@ All domain knowledge in `references/`:
 | research-instagram.md | Scrape Instagram, download images, extract events |
 | research-facebook.md | Scrape Facebook pages for events |
 | research-facebook-discover.md | Discover events by location via Chrome MCP |
+| research-web-aggregator.md | Scrape web event aggregator sites |
 | research-all.md | Run all research workflows |
 </workflows_index>
 
