@@ -1,7 +1,7 @@
 {
-  "name": "local-media-tools",
-  "version": "0.2.0",
-  "description": "Scrape local events from Instagram, Facebook, and web sources. Get structured JSON data for your own workflows.",
+  "name": "newsletter-events",
+  "version": "0.3.0",
+  "description": "Scrape local events from Instagram, Facebook, and web sources. Generate formatted newsletters with natural language preferences.",
   "author": {
     "name": "Aniket Panjwani",
     "email": "aniket@contentquant.io"

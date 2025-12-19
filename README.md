@@ -22,8 +22,8 @@ Local Media Tools scrapes event data from configured sources and stores it in SQ
 ### Installation
 
 ```bash
-/plugin marketplace add https://github.com/aniketpanjwani/local_media_tools
-/plugin install local-media-tools
+/plugin marketplace add aniketpanjwani/local_media_tools
+/plugin install newsletter-events
 /setup
 ```
 

@@ -1,10 +1,10 @@
 {
   "$schema": "https://cdn.jsdelivr.net/npm/@anthropic/claude-code-plugins@latest/marketplace.schema.json",
-  "name": "local-media-tools-marketplace",
-  "description": "Local Media Tools plugin for scraping local events",
+  "name": "local-media-tools",
+  "description": "Plugins for local media and hyperlocal journalism",
   "plugins": [
     {
-      "name": "local-media-tools",
+      "name": "newsletter-events",
       "source": "./"
     }
   ]
