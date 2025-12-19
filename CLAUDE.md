@@ -9,10 +9,9 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 ./scripts/setup.sh
 
 # Configure sources
-cp config/sources.example.yaml config/sources.yaml
-# Edit config/sources.yaml with your accounts
+# Edit ~/.config/local-media-tools/sources.yaml
 
-# Add API keys to .env:
+# Add API keys to ~/.config/local-media-tools/.env:
 # SCRAPECREATORS_API_KEY=your_key (required for Instagram)
 # FIRECRAWL_API_KEY=your_key (optional, for web aggregators)
 ```
@@ -36,6 +35,23 @@ This plugin uses two runtimes:
 - **Python** (primary) - ScrapeCreators API, Firecrawl, deduplication
 - **Node.js** (via subprocess) - Facebook event scraping
 
+## Directory Structure
+
+**Plugin (code/dependencies):** stays in plugin cache, changes on upgrade
+
+**User Config (stable location, persists across upgrades):**
+```
+~/.config/local-media-tools/
+├── .env                    # API keys
+├── sources.yaml            # Event source configuration
+└── data/
+    ├── events.db           # SQLite database
+    ├── raw/                # Raw API responses
+    └── images/             # Downloaded event images
+```
+
+**Output:** Current working directory (newsletters)
+
 ## Project Structure
 
 ```
@@ -45,11 +61,9 @@ commands/          # Slash commands
 skills/            # Skills with workflows and references
 agents/            # Proactive agents
 scripts/           # Scrapers and utilities
-config/            # Configuration files
+  paths.py         # Centralized path resolver
+config/            # Configuration templates
 schemas/           # Pydantic data models
-tmp/               # Working directory (gitignored)
-  extraction/      # Raw scraped data, events.db (SQLite)
-  output/          # Generated newsletters
 tests/             # Pytest test suite
 ```
 
@@ -65,7 +79,9 @@ uv run ruff format .
 
 ## Configuration
 
-Edit `config/sources.yaml` (see `sources.example.yaml` for full documentation):
+Configuration is stored in `~/.config/local-media-tools/sources.yaml`.
+
+See `config/sources.example.yaml` for full documentation:
 
 ```yaml
 newsletter:
@@ -96,5 +112,5 @@ sources:
 
 ## Output
 
-- **Events database**: `tmp/extraction/events.db` (SQLite)
-- **Newsletters**: `tmp/output/newsletter_YYYY-MM-DD.md`
+- **Events database**: `~/.config/local-media-tools/data/events.db` (SQLite)
+- **Newsletters**: `./newsletter_YYYY-MM-DD.md` (in current directory)

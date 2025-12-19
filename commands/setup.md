@@ -7,6 +7,15 @@ description: Set up or verify Local Media Tools environment (runtimes, dependenc
 
 Interactive setup wizard that verifies and configures everything needed to use the plugin.
 
+## Configuration Location
+
+All user configuration is stored in `~/.config/local-media-tools/`:
+- `.env` - API keys (ScrapeCreators, Firecrawl)
+- `sources.yaml` - Event sources configuration
+- `data/events.db` - SQLite database of scraped events
+
+This location persists across plugin upgrades.
+
 ## Arguments
 
 - `--json` - Output machine-readable JSON instead of human-friendly text
@@ -28,14 +37,14 @@ bun --version 2>/dev/null || echo "NOT_INSTALLED"
 >
 > Install with: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 >
-> Then restart your terminal and run `/setup` again.
+> Then restart your terminal and run `/newsletter-events:setup` again.
 
 **If bun missing:**
 > bun (JavaScript runtime) is not installed.
 >
 > Install with: `curl -fsSL https://bun.sh/install | bash`
 >
-> Then restart your terminal and run `/setup` again.
+> Then restart your terminal and run `/newsletter-events:setup` again.
 
 **STOP HERE if runtimes missing.** User must install them first.
 
@@ -53,9 +62,10 @@ Report success/failure clearly. If failure, show the error and suggest fixes.
 
 **Check .env and API key:**
 ```bash
-[ -f .env ] && echo "EXISTS" || echo "MISSING"
-grep -q "SCRAPECREATORS_API_KEY=." .env 2>/dev/null && \
-  ! grep -q "SCRAPECREATORS_API_KEY=your_api_key_here" .env 2>/dev/null && \
+CONFIG_DIR="$HOME/.config/local-media-tools"
+[ -f "$CONFIG_DIR/.env" ] && echo "EXISTS" || echo "MISSING"
+grep -q "SCRAPECREATORS_API_KEY=." "$CONFIG_DIR/.env" 2>/dev/null && \
+  ! grep -q "SCRAPECREATORS_API_KEY=your_api_key_here" "$CONFIG_DIR/.env" 2>/dev/null && \
   echo "KEY_SET" || echo "KEY_MISSING"
 ```
 
@@ -64,7 +74,7 @@ grep -q "SCRAPECREATORS_API_KEY=." .env 2>/dev/null && \
 >
 > 1. Sign up at https://scrapecreators.com
 > 2. Get your API key from the dashboard
-> 3. Edit `.env` and replace the placeholder:
+> 3. Edit `~/.config/local-media-tools/.env` and replace the placeholder:
 >    ```
 >    SCRAPECREATORS_API_KEY=your_actual_key_here
 >    ```
@@ -73,22 +83,22 @@ grep -q "SCRAPECREATORS_API_KEY=." .env 2>/dev/null && \
 
 **Check sources.yaml:**
 ```bash
-[ -f config/sources.yaml ] && echo "EXISTS" || echo "MISSING"
+[ -f "$CONFIG_DIR/sources.yaml" ] && echo "EXISTS" || echo "MISSING"
 ```
 
 **If sources.yaml is still template:**
 > No event sources configured yet.
 >
-> Copy `config/sources.example.yaml` to `config/sources.yaml` and add your sources.
-> See `sources.example.yaml` for detailed configuration examples.
+> Edit `~/.config/local-media-tools/sources.yaml` and add your sources.
+> See `config/sources.example.yaml` in the plugin directory for examples.
 
 **Check Firecrawl API key (if web aggregators configured):**
 
-If `config/sources.yaml` includes `web_aggregators:` section with sources:
+If `sources.yaml` includes `web_aggregators:` section with sources:
 
 ```bash
-grep -q "FIRECRAWL_API_KEY=." .env 2>/dev/null && \
-  ! grep -q "FIRECRAWL_API_KEY=your_firecrawl_api_key_here" .env 2>/dev/null && \
+grep -q "FIRECRAWL_API_KEY=." "$CONFIG_DIR/.env" 2>/dev/null && \
+  ! grep -q "FIRECRAWL_API_KEY=your_firecrawl_api_key_here" "$CONFIG_DIR/.env" 2>/dev/null && \
   echo "KEY_SET" || echo "KEY_MISSING"
 ```
 
@@ -97,7 +107,7 @@ grep -q "FIRECRAWL_API_KEY=." .env 2>/dev/null && \
 >
 > 1. Sign up at https://firecrawl.dev
 > 2. Get your API key from the dashboard
-> 3. Edit `.env` and add:
+> 3. Edit `~/.config/local-media-tools/.env` and add:
 >    ```
 >    FIRECRAWL_API_KEY=your_actual_key_here
 >    ```
@@ -110,6 +120,8 @@ grep -q "FIRECRAWL_API_KEY=." .env 2>/dev/null && \
 ```
 Local Media Tools Setup Status
 ==============================
+Config directory: ~/.config/local-media-tools/
+
 ✅ uv installed (v0.5.x)
 ✅ bun installed (v1.x.x)
 ✅ Python dependencies installed
@@ -119,10 +131,10 @@ Local Media Tools Setup Status
 ⚠️  No sources configured
 
 Next steps:
-1. Add API key to .env
+1. Add API key to ~/.config/local-media-tools/.env
 2. Add Firecrawl key to .env (if using web aggregators)
-3. Configure sources in config/sources.yaml
-4. Run /research to start scraping
+3. Configure sources in ~/.config/local-media-tools/sources.yaml
+4. Run /newsletter-events:research to start scraping
 ```
 
 **JSON output (with --json flag):**
@@ -130,26 +142,32 @@ Next steps:
 For machine-readable output, run `scripts/validate_setup.py`:
 
 ```bash
-python scripts/validate_setup.py
+cd ${CLAUDE_PLUGIN_ROOT}
+uv run python scripts/validate_setup.py
 ```
 
 This returns structured JSON:
 ```json
 {
+  "config_dir": "/Users/you/.config/local-media-tools",
   "plugin_root": "/path/to/plugin",
   "runtimes": {
     "uv": {"installed": true, "version": "uv 0.5.1"},
     "bun": {"installed": true, "version": "1.1.34"}
   },
   "config": {
+    "config_dir_exists": true,
     "env_exists": true,
     "api_key": {"configured": true},
     "firecrawl_key": {"required": false, "configured": true},
     "sources_yaml_exists": true
   },
   "directories": {
-    "tmp_extraction": true,
-    "tmp_output": true
+    "data_dir": true
+  },
+  "database": {
+    "exists": true,
+    "path": "/Users/you/.config/local-media-tools/data/events.db"
   },
   "ready": true
 }

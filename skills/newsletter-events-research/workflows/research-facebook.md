@@ -12,7 +12,10 @@ Read before proceeding:
 ```python
 from config.config_schema import AppConfig
 
-config = AppConfig.from_yaml("config/sources.yaml")
+from pathlib import Path
+
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+config = AppConfig.from_yaml(config_path)
 pages = config.sources.facebook.pages
 ```
 
@@ -30,7 +33,8 @@ for page in pages:
         events = bridge.scrape_page_events(page.url)
 
         # Save raw data
-        save_to = f"tmp/extraction/raw/facebook_{page.name}_{date.today()}.json"
+        data_dir = Path.home() / ".config" / "local-media-tools" / "data"
+        save_to = data_dir / "raw" / f"facebook_{page.name}_{date.today()}.json"
 
     except FacebookScraperError as e:
         # Log error but continue with other pages
@@ -71,11 +75,12 @@ for fb_event in events:
 ```python
 from scripts.scrape_instagram import download_image
 
+data_dir = Path.home() / ".config" / "local-media-tools" / "data"
 for event in events:
     if event.image_url:
         download_image(
             url=event.image_url,
-            output_dir=f"tmp/extraction/images/facebook",
+            output_dir=data_dir / "images" / "facebook",
             filename=f"{event.source_id}.jpg"
         )
 ```
@@ -86,8 +91,11 @@ for event in events:
 from schemas.storage import EventStorage
 from schemas.event import EventCollection
 
+from schemas.sqlite_storage import SqliteStorage
+
 collection = EventCollection(events=all_events)
-storage = EventStorage("tmp/extraction/events.json")
+db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
+storage = SqliteStorage(db_path)
 storage.save(collection)
 ```
 </process>
@@ -96,6 +104,6 @@ storage.save(collection)
 Facebook research complete when:
 - [ ] All configured pages scraped
 - [ ] Event images downloaded
-- [ ] Raw data saved to `tmp/extraction/raw/`
-- [ ] Events saved to `tmp/extraction/events.json`
+- [ ] Raw data saved to `~/.config/local-media-tools/data/raw/`
+- [ ] Events saved to `~/.config/local-media-tools/data/events.db`
 </success_criteria>

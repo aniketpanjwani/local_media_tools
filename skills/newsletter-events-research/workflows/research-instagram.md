@@ -12,7 +12,10 @@ Read before proceeding:
 ```python
 from config.config_schema import AppConfig
 
-config = AppConfig.from_yaml("config/sources.yaml")
+from pathlib import Path
+
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+config = AppConfig.from_yaml(config_path)
 accounts = config.sources.instagram.accounts
 priority = config.sources.instagram.priority_handles
 ```
@@ -31,14 +34,16 @@ for account in accounts:
     result = client.get_instagram_user_posts(account.handle, limit=20)
 
     # Save raw data
-    save_to = f"tmp/extraction/raw/instagram_{account.handle}_{date.today()}.json"
+    data_dir = Path.home() / ".config" / "local-media-tools" / "data"
+    (data_dir / "raw").mkdir(parents=True, exist_ok=True)
+    save_to = data_dir / "raw" / f"instagram_{account.handle}_{date.today()}.json"
 
     # Download images from posts
     for post in result.get("posts", []):
         for image in post.get("images", []):
             download_image(
                 url=image["url"],
-                output_dir=f"tmp/extraction/images/{account.handle}",
+                output_dir=data_dir / "images" / account.handle,
                 filename=f"{post['id']}.jpg"
             )
 ```
@@ -85,11 +90,12 @@ event = Event(
 ## Step 5: Save Results
 
 ```python
-from schemas.storage import EventStorage
+from schemas.sqlite_storage import SqliteStorage
 from schemas.event import EventCollection
 
+db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
 collection = EventCollection(events=events)
-storage = EventStorage("tmp/extraction/events.json")
+storage = SqliteStorage(db_path)
 storage.save(collection)
 ```
 </process>
@@ -97,7 +103,7 @@ storage.save(collection)
 <success_criteria>
 Instagram research complete when:
 - [ ] All configured accounts scraped
-- [ ] Images downloaded to `tmp/extraction/images/`
-- [ ] Raw data saved to `tmp/extraction/raw/`
-- [ ] Events extracted and saved to `tmp/extraction/events.json`
+- [ ] Images downloaded to `~/.config/local-media-tools/data/images/`
+- [ ] Raw data saved to `~/.config/local-media-tools/data/raw/`
+- [ ] Events saved to `~/.config/local-media-tools/data/events.db`
 </success_criteria>

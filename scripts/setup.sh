@@ -11,6 +11,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Stable config directory (persists across plugin upgrades)
+CONFIG_DIR="$HOME/.config/local-media-tools"
+DATA_DIR="$CONFIG_DIR/data"
+
+# Plugin root (for dependencies)
+PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT:-.}"
+
 # Check for uv
 if ! command -v uv &> /dev/null; then
     echo -e "${YELLOW}Installing uv (Python package manager)...${NC}"
@@ -27,43 +34,61 @@ if ! command -v bun &> /dev/null; then
 fi
 echo -e "${GREEN}bun installed${NC}"
 
-# Install Python dependencies
+# Install Python dependencies (in plugin directory)
 echo -e "${YELLOW}Installing Python dependencies with uv...${NC}"
+cd "$PLUGIN_DIR"
 uv sync
 echo -e "${GREEN}Python dependencies installed${NC}"
 
-# Install Node.js dependencies
+# Install Node.js dependencies (in plugin directory)
 echo -e "${YELLOW}Installing Node.js dependencies with bun...${NC}"
 bun install
 echo -e "${GREEN}Node.js dependencies installed${NC}"
 
-# Create tmp directories
-mkdir -p tmp/extraction/raw tmp/extraction/images tmp/output
-echo -e "${GREEN}Created tmp directories${NC}"
+# Create stable config directories
+mkdir -p "$CONFIG_DIR"
+mkdir -p "$DATA_DIR"
+mkdir -p "$DATA_DIR/raw"
+mkdir -p "$DATA_DIR/images"
+echo -e "${GREEN}Created config directories at $CONFIG_DIR${NC}"
 
-# Check for .env file
-if [ ! -f .env ]; then
-    if [ -f .env.example ]; then
-        cp .env.example .env
-        echo -e "${YELLOW}Created .env from .env.example - please add your API keys${NC}"
+# Copy .env template if not exists
+if [ ! -f "$CONFIG_DIR/.env" ]; then
+    if [ -f "$PLUGIN_DIR/.env.example" ]; then
+        cp "$PLUGIN_DIR/.env.example" "$CONFIG_DIR/.env"
+        chmod 600 "$CONFIG_DIR/.env"
+        echo -e "${YELLOW}Created .env from template - please add your API keys${NC}"
     else
-        echo -e "${RED}No .env file found - create one with SCRAPECREATORS_API_KEY${NC}"
+        echo -e "${RED}No .env.example found in plugin directory${NC}"
     fi
 else
     echo -e "${GREEN}.env file exists${NC}"
 fi
 
+# Copy sources.yaml template if not exists
+if [ ! -f "$CONFIG_DIR/sources.yaml" ]; then
+    if [ -f "$PLUGIN_DIR/config/sources.example.yaml" ]; then
+        cp "$PLUGIN_DIR/config/sources.example.yaml" "$CONFIG_DIR/sources.yaml"
+        echo -e "${YELLOW}Created sources.yaml from template - please configure your sources${NC}"
+    else
+        echo -e "${RED}No sources.example.yaml found in plugin directory${NC}"
+    fi
+else
+    echo -e "${GREEN}sources.yaml file exists${NC}"
+fi
+
 # Verify API key
-if [ -z "$SCRAPECREATORS_API_KEY" ] && ! grep -q "SCRAPECREATORS_API_KEY=." .env 2>/dev/null; then
+if [ -z "$SCRAPECREATORS_API_KEY" ] && ! grep -q "SCRAPECREATORS_API_KEY=." "$CONFIG_DIR/.env" 2>/dev/null; then
     echo -e "${RED}Warning: SCRAPECREATORS_API_KEY not set${NC}"
-    echo "   Add to your .env file: SCRAPECREATORS_API_KEY=your_key_here"
+    echo "   Add to $CONFIG_DIR/.env: SCRAPECREATORS_API_KEY=your_key_here"
 fi
 
 echo ""
 echo -e "${GREEN}Setup complete!${NC}"
 echo ""
+echo "Configuration directory: $CONFIG_DIR"
+echo ""
 echo "Next steps:"
-echo "  1. Add your API keys to .env"
-echo "  2. Copy config/sources.example.yaml to config/sources.yaml"
-echo "  3. Configure your event sources"
-echo "  4. Run /research-events to start scraping"
+echo "  1. Add your API keys to $CONFIG_DIR/.env"
+echo "  2. Configure your event sources in $CONFIG_DIR/sources.yaml"
+echo "  3. Run /newsletter-events:research to start scraping"

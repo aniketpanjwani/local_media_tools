@@ -1,7 +1,7 @@
 ---
 description: Validates newsletter plugin configuration before research operations. Use proactively before running Facebook Discover or any research workflow that depends on external services.
 capabilities:
-  - Validate config/sources.yaml exists and is well-formed
+  - Validate ~/.config/local-media-tools/sources.yaml exists and is well-formed
   - Check Facebook location configuration for discovery
   - Verify API keys are set for required services
   - Detect common configuration mistakes
@@ -25,12 +25,12 @@ This agent should run automatically:
 ```python
 from pathlib import Path
 
-config_path = Path("config/sources.yaml")
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
 if not config_path.exists():
     return {
         "valid": False,
-        "error": "config/sources.yaml not found",
-        "fix": "Copy config/sources.example.yaml to config/sources.yaml and customize it"
+        "error": "~/.config/local-media-tools/sources.yaml not found",
+        "fix": "Run /newsletter-events:setup to create config directory and copy templates"
     }
 ```
 
@@ -45,7 +45,7 @@ except yaml.YAMLError as e:
     return {
         "valid": False,
         "error": f"Invalid YAML syntax: {e}",
-        "fix": "Check config/sources.yaml for YAML syntax errors (indentation, colons, etc.)"
+        "fix": "Check ~/.config/local-media-tools/sources.yaml for YAML syntax errors"
     }
 ```
 
@@ -58,7 +58,7 @@ if missing:
     return {
         "valid": False,
         "error": f"Missing required sections: {missing}",
-        "fix": "See config/sources.example.yaml for required structure"
+        "fix": "See config/sources.example.yaml in plugin directory for required structure"
     }
 ```
 
@@ -74,7 +74,7 @@ if not locations:
     return {
         "valid": False,
         "error": "No Facebook locations configured",
-        "fix": "Run /setup-location to add a Facebook location_id, or edit config/sources.yaml manually"
+        "fix": "Run /newsletter-events:setup-location to add a Facebook location_id, or edit ~/.config/local-media-tools/sources.yaml manually"
     }
 
 # Validate each location
@@ -104,7 +104,7 @@ if not os.getenv("SCRAPECREATORS_API_KEY"):
     return {
         "valid": False,
         "error": "SCRAPECREATORS_API_KEY not set",
-        "fix": "Add SCRAPECREATORS_API_KEY to your .env file"
+        "fix": "Add SCRAPECREATORS_API_KEY to ~/.config/local-media-tools/.env"
     }
 ```
 
@@ -118,7 +118,7 @@ if instagram.get("enabled", True) and not accounts:
     return {
         "valid": False,
         "warning": "Instagram enabled but no accounts configured",
-        "fix": "Add Instagram account handles to config/sources.yaml"
+        "fix": "Add Instagram account handles to ~/.config/local-media-tools/sources.yaml"
     }
 ```
 
@@ -163,7 +163,7 @@ User: /research
 Agent: Validating configuration for research...
 
 Config Validation Results:
-  config/sources.yaml   OK
+  ~/.config/local-media-tools/sources.yaml   OK
   YAML syntax           OK
   Facebook locations    2 configured (Medellín, Bogotá)
   Instagram accounts    5 configured
@@ -185,7 +185,7 @@ Agent: Configuration issues found:
 
 You need to configure at least one Facebook location for discovery.
 
-Run `/setup-location` to interactively configure your city, or add manually to config/sources.yaml:
+Run `/newsletter-events:setup-location` to interactively configure your city, or add manually to ~/.config/local-media-tools/sources.yaml:
 
 ```yaml
 sources:
@@ -196,7 +196,7 @@ sources:
 ```
 
 Would you like to:
-1. Run /setup-location now
+1. Run /newsletter-events:setup-location now
 2. Continue with Instagram only
 3. Skip research for now
 ```

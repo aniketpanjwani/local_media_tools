@@ -14,7 +14,10 @@ Read before proceeding:
 ```python
 from config.config_schema import AppConfig
 
-config = AppConfig.from_yaml("config/sources.yaml")
+from pathlib import Path
+
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+config = AppConfig.from_yaml(config_path)
 ```
 
 ## Step 2: Run Instagram Research
@@ -74,7 +77,10 @@ collection = EventCollection(
     week_end=week_end,
 )
 
-storage = EventStorage("tmp/extraction/events.json")
+from schemas.sqlite_storage import SqliteStorage
+
+db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
+storage = SqliteStorage(db_path)
 storage.save(collection)
 ```
 
@@ -93,6 +99,6 @@ Full research complete when:
 - [ ] Facebook research complete (if enabled)
 - [ ] Web aggregator research complete (if enabled)
 - [ ] Events deduplicated across sources
-- [ ] Combined events saved to `tmp/extraction/events.json`
+- [ ] Combined events saved to `~/.config/local-media-tools/data/events.db`
 - [ ] Summary reported to user
 </success_criteria>

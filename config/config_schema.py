@@ -9,11 +9,15 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 
+# Default database path in stable config directory
+DEFAULT_DB_PATH = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
+
+
 class StorageConfig(BaseModel):
     """Storage backend configuration."""
 
     backend: Literal["sqlite", "json"] = "sqlite"
-    path: Path = Field(default=Path("tmp/extraction/events.db"))
+    path: Path = Field(default=DEFAULT_DB_PATH)
     auto_backup: bool = True
 
     @field_validator("path")

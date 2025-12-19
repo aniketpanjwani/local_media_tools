@@ -7,14 +7,19 @@ description: Generate a markdown newsletter from stored events
 
 Generate a markdown newsletter from stored events.
 
+## Configuration Location
+
+- Configuration: `~/.config/local-media-tools/sources.yaml`
+- Events database: `~/.config/local-media-tools/data/events.db`
+- Output: Current working directory (e.g., `./newsletter_YYYY-MM-DD.md`)
+
 ## Instructions
 
-1. Load the configuration from `config/sources.yaml`
+1. Load the configuration from `~/.config/local-media-tools/sources.yaml`
    - Get `newsletter.name` and `newsletter.region`
    - Get `newsletter.formatting_preferences` for formatting instructions
-   - Get `storage.path` for database location
 
-2. Query events from SQLite database
+2. Query events from SQLite database at `~/.config/local-media-tools/data/events.db`
    - Default: next 7 days from today
    - Use `SqliteStorage.query(date_from, date_to)` method
 
@@ -23,25 +28,25 @@ Generate a markdown newsletter from stored events.
    - Apply those instructions to format the newsletter
    - Include event data: title, venue, date, time, price, description, links
 
-4. Save output to `tmp/output/newsletter_YYYY-MM-DD.md`
+4. Save output to current working directory: `./newsletter_YYYY-MM-DD.md`
 
 5. Display preview (first ~50 lines) in terminal
 
 ## Usage
 
 ```
-/write                      # Generate with defaults (next 7 days)
-/write --days 14            # Next 14 days
-/write --from 2025-01-20    # Custom start date
+/newsletter-events:write                      # Generate with defaults (next 7 days)
+/newsletter-events:write --days 14            # Next 14 days
+/newsletter-events:write --from 2025-01-20    # Custom start date
 ```
 
 ## Prerequisites
 
-- Events must be in database (run `/research` first)
-- `config/sources.yaml` should have `formatting_preferences` set
+- Events must be in database (run `/newsletter-events:research` first)
+- `~/.config/local-media-tools/sources.yaml` should have `formatting_preferences` set
 
 ## Expected Output
 
-- File: `tmp/output/newsletter_YYYY-MM-DD.md`
+- File: `./newsletter_YYYY-MM-DD.md` (in current working directory)
 - Preview shown in terminal
 - Summary: event count, date range, output path

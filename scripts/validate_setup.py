@@ -2,11 +2,21 @@
 """Machine-readable setup validation for agents."""
 
 import json
-import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+# Import from sibling module
+sys.path.insert(0, str(Path(__file__).parent))
+from paths import (
+    get_config_dir,
+    get_env_path,
+    get_sources_path,
+    get_database_path,
+    get_plugin_root,
+    DATA_DIR,
+)
 
 
 def check_command(cmd: str) -> dict:
@@ -28,9 +38,9 @@ def check_command(cmd: str) -> dict:
         return {"installed": True, "version": "unknown"}
 
 
-def check_api_key(plugin_root: Path) -> dict:
+def check_api_key() -> dict:
     """Check if API key is configured."""
-    env_file = plugin_root / ".env"
+    env_file = get_env_path()
     if not env_file.exists():
         return {"configured": False, "reason": ".env file missing"}
 
@@ -45,17 +55,16 @@ def check_api_key(plugin_root: Path) -> dict:
     return {"configured": False, "reason": "SCRAPECREATORS_API_KEY not found"}
 
 
-def check_firecrawl_key(plugin_root: Path) -> dict:
+def check_firecrawl_key() -> dict:
     """Check if Firecrawl API key is configured (optional - only for web aggregators)."""
-    # Check if web_aggregators is configured in sources.yaml
-    sources_file = plugin_root / "config/sources.yaml"
+    sources_file = get_sources_path()
     if sources_file.exists():
         content = sources_file.read_text()
         # Only required if web_aggregators section has actual sources
         if "web_aggregators:" not in content or "sources: []" in content:
             return {"required": False, "configured": True}
 
-    env_file = plugin_root / ".env"
+    env_file = get_env_path()
     if not env_file.exists():
         return {"required": True, "configured": False, "reason": ".env missing"}
 
@@ -70,31 +79,38 @@ def check_firecrawl_key(plugin_root: Path) -> dict:
     return {"required": True, "configured": False, "reason": "key not found"}
 
 
-def validate_setup(plugin_root: Path) -> dict:
+def validate_setup() -> dict:
     """Return complete setup status as JSON."""
+    config_dir = get_config_dir()
+    plugin_root = get_plugin_root()
+
     return {
+        "config_dir": str(config_dir),
         "plugin_root": str(plugin_root),
         "runtimes": {
             "uv": check_command("uv"),
             "bun": check_command("bun"),
         },
         "config": {
-            "env_exists": (plugin_root / ".env").exists(),
-            "api_key": check_api_key(plugin_root),
-            "firecrawl_key": check_firecrawl_key(plugin_root),
-            "sources_yaml_exists": (plugin_root / "config/sources.yaml").exists(),
+            "config_dir_exists": config_dir.exists(),
+            "env_exists": get_env_path().exists(),
+            "api_key": check_api_key(),
+            "firecrawl_key": check_firecrawl_key(),
+            "sources_yaml_exists": get_sources_path().exists(),
         },
         "directories": {
-            "tmp_extraction": (plugin_root / "tmp/extraction").exists(),
-            "tmp_output": (plugin_root / "tmp/output").exists(),
+            "data_dir": DATA_DIR.exists(),
+        },
+        "database": {
+            "exists": get_database_path().exists(),
+            "path": str(get_database_path()),
         },
         "ready": False,  # Will be set below
     }
 
 
 def main():
-    plugin_root = Path(os.environ.get("CLAUDE_PLUGIN_ROOT", ".")).resolve()
-    status = validate_setup(plugin_root)
+    status = validate_setup()
 
     # Determine if fully ready
     # Firecrawl key only required if web_aggregators has sources configured

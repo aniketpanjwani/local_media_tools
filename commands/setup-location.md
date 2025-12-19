@@ -119,7 +119,7 @@ If no, go back to Step 5.
 from pathlib import Path
 import yaml
 
-config_path = Path("config/sources.yaml")
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
 if config_path.exists():
     config = yaml.safe_load(config_path.read_text())
 else:
@@ -162,7 +162,7 @@ config_path.write_text(yaml.dump(config, default_flow_style=False, sort_keys=Fal
 
 ### Step 11: Confirm success
 
-> Location saved to `config/sources.yaml`:
+> Location saved to `~/.config/local-media-tools/sources.yaml`:
 >
 > ```yaml
 > locations:
@@ -184,7 +184,7 @@ config_path.write_text(yaml.dump(config, default_flow_style=False, sort_keys=Fal
 | Chrome MCP not available | "Chrome MCP is not responding. Please ensure Chrome is open and the extension is installed." |
 | Not logged into Facebook | "Please log into Facebook in Chrome first, then run this command again." |
 | No location_id in URL | "I couldn't extract a location_id. Please make sure you selected a city from the dropdown (not just typed it)." |
-| Config file write error | "Failed to save config. Please check file permissions for config/sources.yaml" |
+| Config file write error | "Failed to save config. Please check file permissions for ~/.config/local-media-tools/sources.yaml" |
 
 ## Example Session
 
@@ -217,7 +217,7 @@ Is this correct? (yes/no)
 
 User: yes
 
-Claude: Location saved to `config/sources.yaml`:
+Claude: Location saved to `~/.config/local-media-tools/sources.yaml`:
 
 ```yaml
 locations:

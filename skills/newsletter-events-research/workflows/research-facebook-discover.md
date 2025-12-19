@@ -6,7 +6,7 @@ Discover events in a geographic area using Chrome MCP to scrape Facebook's event
 
 1. **Chrome browser** must be open and **logged into Facebook**
 2. **Chrome MCP Server** must be running
-3. **config/sources.yaml** must have at least one location configured under `facebook.locations`
+3. **~/.config/local-media-tools/sources.yaml** must have at least one location configured under `facebook.locations`
 
 ## Workflow
 
@@ -14,8 +14,10 @@ Discover events in a geographic area using Chrome MCP to scrape Facebook's event
 
 ```python
 from config.config_schema import AppConfig
+from pathlib import Path
 
-config = AppConfig.from_yaml("config/sources.yaml")
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+config = AppConfig.from_yaml(config_path)
 
 if not config.sources.facebook.locations:
     print("No Facebook locations configured. See references/facebook-location-setup.md")
@@ -104,7 +106,7 @@ print(f"Found {len(events)} events for {location.location_name}")
 
 ### Step 3: Save Results
 
-Save to `tmp/extraction/facebook_discover_{timestamp}.json`:
+Save to `~/.config/local-media-tools/data/raw/facebook_discover_{timestamp}.json`:
 
 ```python
 import json
@@ -125,7 +127,9 @@ output = {
     ],
 }
 
-with open(f"tmp/extraction/facebook_discover_{datetime.now():%Y%m%d_%H%M%S}.json", "w") as f:
+data_dir = Path.home() / ".config" / "local-media-tools" / "data" / "raw"
+data_dir.mkdir(parents=True, exist_ok=True)
+with open(data_dir / f"facebook_discover_{datetime.now():%Y%m%d_%H%M%S}.json", "w") as f:
     json.dump(output, f, indent=2, default=str)
 ```
 

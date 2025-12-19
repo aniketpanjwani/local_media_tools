@@ -1,6 +1,6 @@
 #!/bin/bash
-# Post-install hook for local-media-tools plugin
-# Purpose: Filesystem setup ONLY (directories, config templates)
+# Post-install hook for newsletter-events plugin
+# Purpose: Create stable config directory and copy templates
 # All runtime/dependency checks happen in /setup command
 
 set -e
@@ -27,19 +27,25 @@ if [ ! -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ]; then
     exit 1
 fi
 
-cd "$PLUGIN_DIR"
+# Stable config directory (persists across plugin upgrades)
+CONFIG_DIR="$HOME/.config/local-media-tools"
+DATA_DIR="$CONFIG_DIR/data"
 
-# Create working directories
-mkdir -p tmp/extraction/raw tmp/extraction/images tmp/output
+# Create stable config directories
+mkdir -p "$CONFIG_DIR"
+mkdir -p "$DATA_DIR"
+mkdir -p "$DATA_DIR/raw"
+mkdir -p "$DATA_DIR/images"
 
-# Copy config templates (only if destination doesn't exist)
-if [ ! -e ".env" ] && [ -f ".env.example" ]; then
-    cp .env.example .env
-    chmod 600 .env
+# Copy .env template (only if destination doesn't exist)
+if [ ! -e "$CONFIG_DIR/.env" ] && [ -f "$PLUGIN_DIR/.env.example" ]; then
+    cp "$PLUGIN_DIR/.env.example" "$CONFIG_DIR/.env"
+    chmod 600 "$CONFIG_DIR/.env"
 fi
 
-if [ ! -e "config/sources.yaml" ] && [ -f "config/sources.example.yaml" ]; then
-    cp config/sources.example.yaml config/sources.yaml
+# Copy sources.yaml template (only if destination doesn't exist)
+if [ ! -e "$CONFIG_DIR/sources.yaml" ] && [ -f "$PLUGIN_DIR/config/sources.example.yaml" ]; then
+    cp "$PLUGIN_DIR/config/sources.example.yaml" "$CONFIG_DIR/sources.yaml"
 fi
 
-echo '{"status": "success", "message": "Local Media Tools installed. Run /setup to configure."}'
+echo '{"status": "success", "message": "Newsletter Events installed. Config at ~/.config/local-media-tools/. Run /newsletter-events:setup to configure."}'

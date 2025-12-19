@@ -12,7 +12,10 @@ Read before proceeding:
 ```python
 from config.config_schema import AppConfig
 
-config = AppConfig.from_yaml("config/sources.yaml")
+from pathlib import Path
+
+config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+config = AppConfig.from_yaml(config_path)
 sources = config.sources.web_aggregators.sources
 
 if not sources:
@@ -42,7 +45,9 @@ for source in sources:
         )
 
         # Save raw markdown for reference
-        raw_path = f"tmp/extraction/raw/web_{source.name}_{date.today()}.json"
+        data_dir = Path.home() / ".config" / "local-media-tools" / "data" / "raw"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        raw_path = data_dir / f"web_{source.name}_{date.today()}.json"
         with open(raw_path, "w") as f:
             json.dump(pages, f, indent=2)
 
@@ -95,18 +100,15 @@ event = Event(
 ## Step 4: Merge with Existing Events
 
 ```python
-from schemas.storage import EventStorage
+from schemas.sqlite_storage import SqliteStorage
+from schemas.event import EventCollection
 
-storage = EventStorage("tmp/extraction/events.json")
-existing = storage.load()
+db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
+storage = SqliteStorage(db_path)
 
-added = 0
-for event in extracted_events:
-    if existing.add_event(event):
-        added += 1
-
-storage.save(existing)
-print(f"Added {added} new events (deduplicated)")
+collection = EventCollection(events=extracted_events)
+result = storage.save(collection)
+print(f"Added {result.saved} new events, updated {result.updated}")
 ```
 
 </process>
@@ -114,8 +116,8 @@ print(f"Added {added} new events (deduplicated)")
 <success_criteria>
 Web aggregator research complete when:
 - [ ] All configured sources scraped
-- [ ] Raw markdown saved to `tmp/extraction/raw/web_*.json`
+- [ ] Raw markdown saved to `~/.config/local-media-tools/data/raw/web_*.json`
 - [ ] Claude extracted events from markdown content
-- [ ] Events merged to `tmp/extraction/events.json`
+- [ ] Events saved to `~/.config/local-media-tools/data/events.db`
 - [ ] Events marked with `needs_review=True` for human verification
 </success_criteria>
