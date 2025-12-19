@@ -1,7 +1,7 @@
 # Local Media Tools - Source Configuration
 # =========================================
 # Configure your event sources here. Run /research to scrape all enabled sources.
-# Output: tmp/extraction/events.json
+# Output: tmp/extraction/events.db (SQLite)
 
 newsletter:
   name: "My Local Events"      # Project name (used in output metadata)
@@ -122,3 +122,12 @@ filters:
     - "cancelled"
     - "postponed"
     - "rescheduled"
+
+# ============================================================================
+# STORAGE
+# ============================================================================
+
+storage:
+  backend: sqlite      # sqlite (default) or json (legacy)
+  path: tmp/extraction/events.db
+  auto_backup: true    # Backup before migrations
