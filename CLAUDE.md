@@ -1,6 +1,6 @@
-# Newsletter Events Plugin
+# Local Media Tools
 
-A Claude Code plugin that automates local newsletter event curation by scraping Instagram and Facebook.
+A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources.
 
 ## Quick Start
 
@@ -12,29 +12,26 @@ A Claude Code plugin that automates local newsletter event curation by scraping 
 cp config/sources.example.yaml config/sources.yaml
 # Edit config/sources.yaml with your accounts
 
-# Add API keys
-# Edit .env with your SCRAPECREATORS_API_KEY
+# Add API keys to .env:
+# SCRAPECREATORS_API_KEY=your_key (required for Instagram)
+# FIRECRAWL_API_KEY=your_key (optional, for web aggregators)
 ```
 
 ## Skills
 
 - **newsletter-events-setup** - Environment setup and verification
-- **newsletter-events-discover** - Find event sources for a new city/region
 - **newsletter-events-research** - Scrape events from configured sources
-- **newsletter-events-write** - Generate newsletter markdown from events
 
 ## Commands
 
 - `/setup` - Set up or verify environment
-- `/discover [city]` - Find Instagram/Facebook sources for a city
+- `/setup-location` - Configure Facebook location-based discovery
 - `/research` - Scrape all configured sources
-- `/write` - Generate newsletter from cached events
-- `/full-run` - Run complete pipeline (research + write)
 
 ## Architecture
 
 This plugin uses two runtimes:
-- **Python** (primary) - ScrapeCreators API, deduplication, templating
+- **Python** (primary) - ScrapeCreators API, Firecrawl, deduplication
 - **Node.js** (via subprocess) - Facebook event scraping
 
 ## Project Structure
@@ -48,10 +45,8 @@ agents/            # Proactive agents
 scripts/           # Scrapers and utilities
 config/            # Configuration files
 schemas/           # Pydantic data models
-templates/         # Jinja2 newsletter templates
 tmp/               # Working directory (gitignored)
-  extraction/      # Raw scraped data
-  output/          # Generated newsletters
+  extraction/      # Raw scraped data, events.json
 tests/             # Pytest test suite
 ```
 
@@ -61,16 +56,13 @@ tests/             # Pytest test suite
 # Run tests
 uv run pytest
 
-# Type check
-uv run mypy .
-
 # Format
 uv run ruff format .
 ```
 
 ## Configuration
 
-Edit `config/sources.yaml`:
+Edit `config/sources.yaml` (see `sources.example.yaml` for full documentation):
 
 ```yaml
 newsletter:
@@ -83,4 +75,19 @@ sources:
       - handle: "local_venue"
         name: "Local Venue"
         type: "music_venue"
+
+  facebook:
+    pages:
+      - url: "https://facebook.com/venue/events"
+        name: "The Venue"
+
+  web_aggregators:
+    sources:
+      - url: "https://localevents.com"
+        name: "Local Events"
+        source_type: "listing"
 ```
+
+## Output
+
+Scraped events are saved to `tmp/extraction/events.json` as structured JSON.

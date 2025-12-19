@@ -6,7 +6,7 @@ from config.config_schema import (
     FacebookPage,
     InstagramAccount,
     InstagramConfig,
-    NewsletterConfig,
+    ProjectConfig,
     SourcesConfig,
 )
 
@@ -16,6 +16,6 @@ __all__ = [
     "FacebookPage",
     "InstagramAccount",
     "InstagramConfig",
-    "NewsletterConfig",
+    "ProjectConfig",
     "SourcesConfig",
 ]

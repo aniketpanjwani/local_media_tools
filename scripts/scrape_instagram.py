@@ -137,22 +137,6 @@ class ScrapeCreatorsClient:
             params["next_max_id"] = next_max_id
         return self._make_request("GET", f"/v1/instagram/user/posts/{handle}", params=params)
 
-    def google_search(self, query: str, region: str = "CA") -> dict[str, Any]:
-        """
-        Search Google via ScrapeCreators API.
-
-        Args:
-            query: Search query string
-            region: 2-letter country code (default: CA for Canada)
-
-        Returns:
-            Dict with 'success' bool and 'results' list of search results.
-            Each result has 'url', 'title', and 'description' fields.
-        """
-        params = {"query": query, "region": region}
-        return self._make_request("GET", "/v1/google/search", params=params)
-
-
 def download_image(url: str, output_dir: Path, filename: str) -> Path | None:
     """
     Download an image to the specified directory.

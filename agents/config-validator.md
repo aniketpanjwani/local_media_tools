@@ -15,8 +15,7 @@ Proactive agent that validates plugin configuration before research operations.
 ## When to Use
 
 This agent should run automatically:
-- **Before** `/research` command (especially Facebook Discover)
-- **Before** `/discover` command
+- **Before** `/research` command (especially Facebook location-based discovery)
 - **Before** any skill workflow that requires external configuration
 
 ## Validation Checks

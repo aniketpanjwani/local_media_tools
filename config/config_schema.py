@@ -102,14 +102,6 @@ class SourcesConfig(BaseModel):
     web_aggregators: WebAggregatorConfig = Field(default_factory=WebAggregatorConfig)
 
 
-class OutputConfig(BaseModel):
-    """Output configuration."""
-
-    template: str = "templates/newsletter.md.j2"
-    path: str = "tmp/output/"
-    include_images: bool = True
-
-
 class FiltersConfig(BaseModel):
     """Event filtering configuration."""
 
@@ -120,20 +112,18 @@ class FiltersConfig(BaseModel):
     exclude_keywords: list[str] = Field(default_factory=list)
 
 
-class NewsletterConfig(BaseModel):
-    """Top-level newsletter configuration."""
+class ProjectConfig(BaseModel):
+    """Top-level project configuration."""
 
     name: str
     region: str
-    week_start: str = "tuesday"
 
 
 class AppConfig(BaseModel):
     """Complete application configuration."""
 
-    newsletter: NewsletterConfig
+    newsletter: ProjectConfig  # Keep 'newsletter' key for backwards compatibility
     sources: SourcesConfig = Field(default_factory=SourcesConfig)
-    output: OutputConfig = Field(default_factory=OutputConfig)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
 
     @classmethod
