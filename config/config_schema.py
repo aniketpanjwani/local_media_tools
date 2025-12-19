@@ -65,8 +65,6 @@ class FacebookLocation(BaseModel):
     location_name: str = Field(..., description="Human-readable name (e.g., 'Medellín, Antioquia')")
     date_filter: Literal["THIS_WEEK", "THIS_WEEKEND", "THIS_MONTH"] = "THIS_WEEK"
     max_events: int = Field(100, ge=1, le=500)
-    scroll_count: int = Field(3, ge=1, le=10, description="Conservative default; each scroll ~10 events")
-    scroll_delay_seconds: float = Field(5.0, ge=1.0, le=15.0, description="Delay to avoid rate limits")
 
 
 class FacebookConfig(BaseModel):

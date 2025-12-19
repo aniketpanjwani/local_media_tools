@@ -66,15 +66,24 @@ if not is_logged_in(page_content):
     # STOP HERE
 ```
 
-#### 2d. Scroll to Load More Events
+#### 2d. Ask User to Scroll (Interactive)
 
-Repeat `location.scroll_count` times (default: 3):
+**IMPORTANT:** Facebook's infinite scroll is unreliable with automation. Ask the user to scroll manually.
 
-```
-chrome_keyboard(keys: "PageDown")
-```
+1. **Tell the user:**
+   ```
+   I've opened the Facebook events page for {location.location_name}.
 
-Wait `location.scroll_delay_seconds` (default: 5.0) between scrolls.
+   Please scroll down in the browser to load more events.
+   When you've loaded enough events (or reached the end), let me know and I'll capture them.
+   ```
+
+2. **Wait for user confirmation** before proceeding to step 2e.
+
+This approach is more reliable because:
+- The user can see when events are loading
+- They can handle any CAPTCHAs or pop-ups
+- They control how many events to load
 
 #### 2e. Extract Event Links
 

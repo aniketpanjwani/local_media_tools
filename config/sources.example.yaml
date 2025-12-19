@@ -1,7 +1,8 @@
 # Local Media Tools - Source Configuration
 # =========================================
 # Configure your event sources here. Run /research to scrape all enabled sources.
-# Output: tmp/extraction/events.db (SQLite)
+# User config location: ~/.config/local-media-tools/
+# Database output: ~/.config/local-media-tools/data/events.db
 
 newsletter:
   name: "My Local Events"      # Project name (used in output metadata)
@@ -88,14 +89,13 @@ sources:
 
     # Location-based discovery (requires Chrome MCP + Facebook login)
     # Run /setup-location to find your city's location_id
+    # Note: Claude will open the browser and ask you to scroll to load events
     locations: []
     # Example:
     # locations:
     #   - location_id: "111841478834264"        # Facebook location ID
     #     location_name: "Medellín, Antioquia"  # Human-readable name
     #     date_filter: "THIS_WEEK"              # THIS_WEEK, THIS_WEEKEND, THIS_MONTH
-    #     scroll_count: 3                       # More scrolls = more events (slower)
-    #     scroll_delay_seconds: 5.0             # Higher = safer from rate limits
 
   # --------------------------------------------------------------------------
   # WEB AGGREGATORS
@@ -153,5 +153,5 @@ filters:
 
 storage:
   backend: sqlite      # sqlite (default) or json (legacy)
-  path: tmp/extraction/events.db
+  # path: ~/.config/local-media-tools/data/events.db  # Default, can override
   auto_backup: true    # Backup before migrations
