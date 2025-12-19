@@ -127,17 +127,21 @@ class FiltersConfig(BaseModel):
     exclude_keywords: list[str] = Field(default_factory=list)
 
 
-class ProjectConfig(BaseModel):
-    """Top-level project configuration."""
+class NewsletterConfig(BaseModel):
+    """Newsletter project configuration with formatting preferences."""
 
     name: str
     region: str
+    formatting_preferences: str = Field(
+        default="Organize events chronologically by date. Use section headers for each day. Include event title, venue, time, and price. Keep formatting simple and readable.",
+        description="Natural language instructions for how Claude should format the newsletter markdown",
+    )
 
 
 class AppConfig(BaseModel):
     """Complete application configuration."""
 
-    newsletter: ProjectConfig  # Keep 'newsletter' key for backwards compatibility
+    newsletter: NewsletterConfig
     sources: SourcesConfig = Field(default_factory=SourcesConfig)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)

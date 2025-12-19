@@ -21,12 +21,14 @@ cp config/sources.example.yaml config/sources.yaml
 
 - **newsletter-events-setup** - Environment setup and verification
 - **newsletter-events-research** - Scrape events from configured sources
+- **newsletter-events-write** - Generate newsletter markdown from stored events
 
 ## Commands
 
 - `/setup` - Set up or verify environment
 - `/setup-location` - Configure Facebook location-based discovery
 - `/research` - Scrape all configured sources
+- `/write` - Generate newsletter from stored events
 
 ## Architecture
 
@@ -46,7 +48,8 @@ scripts/           # Scrapers and utilities
 config/            # Configuration files
 schemas/           # Pydantic data models
 tmp/               # Working directory (gitignored)
-  extraction/      # Raw scraped data, events.json
+  extraction/      # Raw scraped data, events.db (SQLite)
+  output/          # Generated newsletters
 tests/             # Pytest test suite
 ```
 
@@ -68,6 +71,9 @@ Edit `config/sources.yaml` (see `sources.example.yaml` for full documentation):
 newsletter:
   name: "My Local Events"
   region: "Hudson Valley, NY"
+  formatting_preferences: |
+    Organize by date with day headers.
+    Use emojis for categories.
 
 sources:
   instagram:
@@ -90,4 +96,5 @@ sources:
 
 ## Output
 
-Scraped events are saved to `tmp/extraction/events.json` as structured JSON.
+- **Events database**: `tmp/extraction/events.db` (SQLite)
+- **Newsletters**: `tmp/output/newsletter_YYYY-MM-DD.md`

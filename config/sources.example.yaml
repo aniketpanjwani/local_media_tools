@@ -7,6 +7,30 @@ newsletter:
   name: "My Local Events"      # Project name (used in output metadata)
   region: "Hudson Valley, NY"  # Target region for events
 
+  # Formatting preferences for /write command
+  # Describe in plain English how you want your newsletter formatted.
+  # Claude will interpret these instructions when generating markdown.
+  formatting_preferences: |
+    Organize events by date with each day as a section header.
+    Format dates like "Saturday, January 20".
+    For each event, show: **Title** @ Venue | Time | Price
+    Use emojis for categories: 🎵 music, 🎨 art, 🍴 food, 🎭 theater.
+    Keep descriptions to 1-2 sentences max.
+    Include [Get Tickets](url) links when available.
+
+  # Alternative formatting examples:
+  #
+  # Minimal style:
+  # formatting_preferences: |
+  #   Organize by date. Simple formatting, no emojis.
+  #   Just event name, venue, and time.
+  #
+  # By category:
+  # formatting_preferences: |
+  #   Organize by category (Music, Art, Food, Community).
+  #   Within each category, sort by date.
+  #   Use bullet points with essentials only.
+
 # ============================================================================
 # SOURCES
 # ============================================================================
