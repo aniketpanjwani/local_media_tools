@@ -9,6 +9,21 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 
+class StorageConfig(BaseModel):
+    """Storage backend configuration."""
+
+    backend: Literal["sqlite", "json"] = "sqlite"
+    path: Path = Field(default=Path("tmp/extraction/events.db"))
+    auto_backup: bool = True
+
+    @field_validator("path")
+    @classmethod
+    def ensure_parent_exists(cls, v: Path) -> Path:
+        """Ensure parent directory exists."""
+        v.parent.mkdir(parents=True, exist_ok=True)
+        return v
+
+
 class InstagramAccount(BaseModel):
     """Configuration for a single Instagram account."""
 
@@ -125,6 +140,7 @@ class AppConfig(BaseModel):
     newsletter: ProjectConfig  # Keep 'newsletter' key for backwards compatibility
     sources: SourcesConfig = Field(default_factory=SourcesConfig)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "AppConfig":

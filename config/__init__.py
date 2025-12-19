@@ -8,6 +8,7 @@ from config.config_schema import (
     InstagramConfig,
     ProjectConfig,
     SourcesConfig,
+    StorageConfig,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "InstagramConfig",
     "ProjectConfig",
     "SourcesConfig",
+    "StorageConfig",
 ]
