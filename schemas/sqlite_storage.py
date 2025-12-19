@@ -16,10 +16,18 @@ from typing import Generator, Literal
 
 from rapidfuzz import fuzz
 
-from schemas.event import Event, EventCategory, EventCollection, EventSource, Venue
+from schemas.event import (
+    Event,
+    EventCategory,
+    EventCollection,
+    EventSource,
+    InstagramPost,
+    InstagramProfile,
+    Venue,
+)
 
 
-CURRENT_SCHEMA_VERSION = "1.0.0"
+CURRENT_SCHEMA_VERSION = "2.0.0"
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -27,6 +35,51 @@ CREATE TABLE IF NOT EXISTS schema_metadata (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- Instagram profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instagram_id TEXT UNIQUE NOT NULL,
+    handle TEXT NOT NULL,
+    full_name TEXT,
+    bio TEXT,
+    followers_count INTEGER,
+    following_count INTEGER,
+    post_count INTEGER,
+    profile_pic_url TEXT,
+    is_verified INTEGER DEFAULT 0 CHECK(is_verified IN (0, 1)),
+    external_url TEXT,
+    last_scraped_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle);
+CREATE INDEX IF NOT EXISTS idx_profiles_instagram_id ON profiles(instagram_id);
+
+-- Instagram posts table
+CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id INTEGER NOT NULL,
+    instagram_post_id TEXT UNIQUE NOT NULL,
+    shortcode TEXT,
+    post_url TEXT NOT NULL,
+    caption TEXT,
+    media_type TEXT CHECK(media_type IN ('photo', 'video', 'carousel', 'reel')),
+    display_url TEXT,
+    like_count INTEGER DEFAULT 0,
+    comment_count INTEGER DEFAULT 0,
+    posted_at TEXT NOT NULL,
+    scraped_at TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_posts_profile_id ON posts(profile_id);
+CREATE INDEX IF NOT EXISTS idx_posts_instagram_post_id ON posts(instagram_post_id);
+CREATE INDEX IF NOT EXISTS idx_posts_posted_at ON posts(posted_at);
+CREATE INDEX IF NOT EXISTS idx_posts_shortcode ON posts(shortcode);
 
 -- Venues table (normalized)
 CREATE TABLE IF NOT EXISTS venues (
@@ -43,11 +96,12 @@ CREATE TABLE IF NOT EXISTS venues (
     UNIQUE(name, city, state)
 );
 
--- Events table with foreign key to venues
+-- Events table with foreign key to venues and posts
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     unique_key TEXT UNIQUE NOT NULL,
     venue_id INTEGER NOT NULL,
+    post_id INTEGER,
 
     -- Core fields
     title TEXT NOT NULL,
@@ -80,7 +134,8 @@ CREATE TABLE IF NOT EXISTS events (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (venue_id) REFERENCES venues(id)
+    FOREIGN KEY (venue_id) REFERENCES venues(id),
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL
 );
 
 -- Indexes for common queries
@@ -88,6 +143,7 @@ CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date);
 CREATE INDEX IF NOT EXISTS idx_events_source ON events(source);
 CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);
 CREATE INDEX IF NOT EXISTS idx_events_venue_id ON events(venue_id);
+CREATE INDEX IF NOT EXISTS idx_events_post_id ON events(post_id);
 CREATE INDEX IF NOT EXISTS idx_venues_instagram ON venues(instagram_handle);
 """
 
@@ -159,9 +215,256 @@ class SqliteStorage:
             self._migrate_schema(conn, from_version=result[0])
 
     def _migrate_schema(self, conn: sqlite3.Connection, from_version: str) -> None:
-        """Run schema migrations. Placeholder for future versions."""
-        # Will be implemented when schema evolves
-        pass
+        """Run schema migrations."""
+        if from_version == "1.0.0":
+            self._migrate_1_0_0_to_2_0_0(conn)
+            conn.execute(
+                "UPDATE schema_metadata SET value = ? WHERE key = 'version'",
+                (CURRENT_SCHEMA_VERSION,),
+            )
+
+    def _migrate_1_0_0_to_2_0_0(self, conn: sqlite3.Connection) -> None:
+        """Migrate from 1.0.0 to 2.0.0: Add profiles, posts tables, and post_id FK."""
+        # Create profiles table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                instagram_id TEXT UNIQUE NOT NULL,
+                handle TEXT NOT NULL,
+                full_name TEXT,
+                bio TEXT,
+                followers_count INTEGER,
+                following_count INTEGER,
+                post_count INTEGER,
+                profile_pic_url TEXT,
+                is_verified INTEGER DEFAULT 0 CHECK(is_verified IN (0, 1)),
+                external_url TEXT,
+                last_scraped_at TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_profiles_instagram_id ON profiles(instagram_id)")
+
+        # Create posts table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS posts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                profile_id INTEGER NOT NULL,
+                instagram_post_id TEXT UNIQUE NOT NULL,
+                shortcode TEXT,
+                post_url TEXT NOT NULL,
+                caption TEXT,
+                media_type TEXT CHECK(media_type IN ('photo', 'video', 'carousel', 'reel')),
+                display_url TEXT,
+                like_count INTEGER DEFAULT 0,
+                comment_count INTEGER DEFAULT 0,
+                posted_at TEXT NOT NULL,
+                scraped_at TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_posts_profile_id ON posts(profile_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_posts_instagram_post_id ON posts(instagram_post_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_posts_posted_at ON posts(posted_at)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_posts_shortcode ON posts(shortcode)")
+
+        # Add post_id column to events table
+        conn.execute("ALTER TABLE events ADD COLUMN post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_events_post_id ON events(post_id)")
+
+    def _find_or_create_profile(
+        self, conn: sqlite3.Connection, profile: InstagramProfile
+    ) -> int:
+        """Find existing profile by instagram_id or create new one."""
+        existing = conn.execute(
+            "SELECT id FROM profiles WHERE instagram_id = ?",
+            (profile.instagram_id,),
+        ).fetchone()
+
+        if existing:
+            self._update_profile(conn, existing["id"], profile)
+            return existing["id"]
+
+        return self._insert_profile(conn, profile)
+
+    def _update_profile(
+        self, conn: sqlite3.Connection, profile_id: int, profile: InstagramProfile
+    ) -> None:
+        """Update profile with any new non-null fields."""
+        conn.execute(
+            """
+            UPDATE profiles SET
+                handle = ?,
+                full_name = COALESCE(?, full_name),
+                bio = COALESCE(?, bio),
+                followers_count = COALESCE(?, followers_count),
+                following_count = COALESCE(?, following_count),
+                post_count = COALESCE(?, post_count),
+                profile_pic_url = COALESCE(?, profile_pic_url),
+                is_verified = ?,
+                external_url = COALESCE(?, external_url),
+                last_scraped_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                profile.handle,
+                profile.full_name,
+                profile.bio,
+                profile.followers_count,
+                profile.following_count,
+                profile.post_count,
+                profile.profile_pic_url,
+                1 if profile.is_verified else 0,
+                profile.external_url,
+                profile_id,
+            ),
+        )
+
+    def _insert_profile(self, conn: sqlite3.Connection, profile: InstagramProfile) -> int:
+        """Insert new profile and return its ID."""
+        cursor = conn.execute(
+            """
+            INSERT INTO profiles (
+                instagram_id, handle, full_name, bio, followers_count,
+                following_count, post_count, profile_pic_url, is_verified,
+                external_url, last_scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            (
+                profile.instagram_id,
+                profile.handle,
+                profile.full_name,
+                profile.bio,
+                profile.followers_count,
+                profile.following_count,
+                profile.post_count,
+                profile.profile_pic_url,
+                1 if profile.is_verified else 0,
+                profile.external_url,
+            ),
+        )
+        return cursor.lastrowid  # type: ignore[return-value]
+
+    def _find_or_create_post(
+        self, conn: sqlite3.Connection, post: InstagramPost, profile_id: int
+    ) -> int:
+        """Find existing post by instagram_post_id or create new one."""
+        existing = conn.execute(
+            "SELECT id FROM posts WHERE instagram_post_id = ?",
+            (post.instagram_post_id,),
+        ).fetchone()
+
+        if existing:
+            self._update_post(conn, existing["id"], post)
+            return existing["id"]
+
+        return self._insert_post(conn, post, profile_id)
+
+    def _update_post(
+        self, conn: sqlite3.Connection, post_id: int, post: InstagramPost
+    ) -> None:
+        """Update post with latest data."""
+        conn.execute(
+            """
+            UPDATE posts SET
+                shortcode = COALESCE(?, shortcode),
+                post_url = ?,
+                caption = ?,
+                media_type = ?,
+                display_url = COALESCE(?, display_url),
+                like_count = ?,
+                comment_count = ?,
+                scraped_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                post.shortcode,
+                post.post_url,
+                post.caption,
+                post.media_type,
+                post.display_url,
+                post.like_count,
+                post.comment_count,
+                post_id,
+            ),
+        )
+
+    def _insert_post(
+        self, conn: sqlite3.Connection, post: InstagramPost, profile_id: int
+    ) -> int:
+        """Insert new post and return its ID."""
+        cursor = conn.execute(
+            """
+            INSERT INTO posts (
+                profile_id, instagram_post_id, shortcode, post_url, caption,
+                media_type, display_url, like_count, comment_count,
+                posted_at, scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            (
+                profile_id,
+                post.instagram_post_id,
+                post.shortcode,
+                post.post_url,
+                post.caption,
+                post.media_type,
+                post.display_url,
+                post.like_count,
+                post.comment_count,
+                post.posted_at.isoformat(),
+            ),
+        )
+        return cursor.lastrowid  # type: ignore[return-value]
+
+    def save_instagram_scrape(
+        self,
+        profile: InstagramProfile,
+        posts: list[InstagramPost],
+        events_by_post: dict[str, list[Event]],
+    ) -> SaveResult:
+        """
+        Save profile, posts, and extracted events atomically.
+
+        Args:
+            profile: Instagram profile data
+            posts: List of posts from the profile
+            events_by_post: Dict mapping instagram_post_id -> list of extracted events
+
+        Returns:
+            SaveResult with counts of saved/updated records
+        """
+        saved = 0
+        updated = 0
+        errors: list[tuple[str, str]] = []
+
+        with self._connection() as conn:
+            # 1. Save/update profile
+            profile_id = self._find_or_create_profile(conn, profile)
+
+            # 2. Save/update posts and link events
+            for post in posts:
+                try:
+                    post_db_id = self._find_or_create_post(conn, post, profile_id)
+
+                    # Link events to this post
+                    for event in events_by_post.get(post.instagram_post_id, []):
+                        event.post_id = post_db_id
+                        venue_id = self._find_or_create_venue(conn, event.venue)
+                        result = self._upsert_event(conn, event, venue_id)
+                        if result == "saved":
+                            saved += 1
+                        else:
+                            updated += 1
+                except Exception as e:
+                    errors.append((post.instagram_post_id, str(e)))
+
+        return SaveResult(saved=saved, updated=updated, errors=errors if errors else None)
 
     def _find_or_create_venue(self, conn: sqlite3.Connection, venue: Venue) -> int:
         """Find existing venue (fuzzy match) or create new one."""
@@ -266,6 +569,7 @@ class SqliteStorage:
             event.review_notes,
             event.scraped_at.isoformat() if event.scraped_at else None,
             venue_id,
+            event.post_id,
         )
 
         if existing:
@@ -277,7 +581,7 @@ class SqliteStorage:
                     price = ?, is_free = ?, ticket_url = ?, event_url = ?,
                     image_url = ?, source_url = ?, source_id = ?,
                     confidence = ?, needs_review = ?, review_notes = ?, scraped_at = ?,
-                    venue_id = ?, updated_at = CURRENT_TIMESTAMP
+                    venue_id = ?, post_id = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE unique_key = ?
                 """,
                 (*event_data, event.unique_key),
@@ -292,8 +596,8 @@ class SqliteStorage:
                     price, is_free, ticket_url, event_url,
                     image_url, source_url, source_id,
                     confidence, needs_review, review_notes, scraped_at,
-                    venue_id, unique_key
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    venue_id, post_id, unique_key
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (*event_data, event.unique_key),
             )
@@ -428,6 +732,7 @@ class SqliteStorage:
             needs_review=bool(row["needs_review"]),
             review_notes=row["review_notes"],
             scraped_at=scraped_at,
+            post_id=row["post_id"] if "post_id" in row.keys() else None,
             unique_key=row["unique_key"],
         )
 

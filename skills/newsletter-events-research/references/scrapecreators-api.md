@@ -26,38 +26,51 @@ posts = client.get_instagram_user_posts("theavalonlounge", limit=20)
 
 ## Response Structure
 
-### Profile Response
-
-```json
-{
-  "username": "theavalonlounge",
-  "full_name": "The Avalon Lounge",
-  "biography": "Live music venue...",
-  "follower_count": 5000,
-  "is_verified": false
-}
-```
-
 ### Posts Response
+
+The posts endpoint returns a nested structure with profile owner info embedded in each post:
 
 ```json
 {
   "posts": [
     {
-      "id": "3123456789",
-      "caption": "Tonight! Live music with...",
-      "taken_at": "2025-01-15T18:00:00Z",
-      "media_type": "image",
-      "images": [
-        {"url": "https://..."}
-      ],
-      "like_count": 50,
-      "comment_count": 5
+      "node": {
+        "id": "3791185451521504245",
+        "shortcode": "DSc_xTjkXP1",
+        "__typename": "GraphImage",
+        "display_url": "https://instagram.com/...",
+        "owner": {
+          "id": "11425683273",
+          "username": "theavalonlounge"
+        },
+        "is_video": false,
+        "edge_media_to_caption": {
+          "edges": [{"node": {"text": "Tonight! Live music..."}}]
+        },
+        "edge_liked_by": {"count": 99},
+        "edge_media_to_comment": {"count": 5},
+        "taken_at_timestamp": 1766164545,
+        "url": "https://www.instagram.com/p/DSc_xTjkXP1/"
+      }
     }
   ],
   "next_max_id": "abc123"
 }
 ```
+
+**Key fields:**
+- `node.id` - Post ID (numeric string)
+- `node.shortcode` - URL shortcode
+- `node.__typename` - Media type: `GraphImage`, `GraphVideo`, `GraphSidecar` (carousel)
+- `node.owner.id` - Profile's Instagram ID
+- `node.owner.username` - Profile handle
+- `node.edge_media_to_caption.edges[0].node.text` - Caption text
+- `node.taken_at_timestamp` - Unix timestamp when posted
+- `node.url` - Full post URL
+
+### Profile Endpoint
+
+**Note:** The `/v1/instagram/profile/{handle}` endpoint may return 404. Extract profile info from post owner data instead.
 
 ## Rate Limiting
 

@@ -34,11 +34,28 @@ For each Instagram account in the config:
 
 ```python
 from scripts.scrape_instagram import ScrapeCreatorsClient
+from schemas.event import InstagramProfile, InstagramPost
 
 client = ScrapeCreatorsClient()
 
 for account in accounts:
     result = client.get_instagram_user_posts(account.handle, limit=20)
+
+    # Extract profile info from first post's owner data
+    if result.get("posts"):
+        first_post = result["posts"][0]["node"]
+        owner = first_post.get("owner", {})
+        profile = InstagramProfile(
+            instagram_id=owner.get("id", ""),
+            handle=owner.get("username", account.handle),
+        )
+
+    # Create InstagramPost objects from API response
+    posts = []
+    for post_data in result.get("posts", []):
+        node = post_data.get("node", {})
+        post = InstagramPost.from_api_response(node)
+        posts.append(post)
 
     # Save raw data
     data_dir = Path.home() / ".config" / "local-media-tools" / "data"
@@ -106,34 +123,48 @@ Example output for weekly schedule:
 3. Live Band | 2025-01-24 | 21:00 | MAMM | $10
 ```
 
-## Step 5: Create Event Objects
+## Step 5: Create Event Objects and Track by Post
 
 **Only for classified events with extractable details:**
 
 ```python
 from schemas.event import Event, Venue, EventSource
 
-event = Event(
-    title=extracted_title,
-    venue=Venue(name=venue_name, instagram_handle=account.handle),
-    event_date=parsed_date,
-    source=EventSource.INSTAGRAM,
-    source_url=post_url,
-    image_url=image_url,
-    confidence=calculated_confidence,
-)
+# Track which events came from which post
+events_by_post: dict[str, list[Event]] = {}
+
+for post in posts:
+    if post_classification[post.instagram_post_id] in ["ONE_EVENT", "MULTIPLE_EVENTS"]:
+        extracted_events = extract_events_from_post(post)
+        for event_data in extracted_events:
+            event = Event(
+                title=event_data["title"],
+                venue=Venue(name=event_data["venue"], instagram_handle=account.handle),
+                event_date=event_data["date"],
+                source=EventSource.INSTAGRAM,
+                source_url=post.post_url,
+                image_url=post.display_url,
+                confidence=event_data.get("confidence", 0.8),
+            )
+            if post.instagram_post_id not in events_by_post:
+                events_by_post[post.instagram_post_id] = []
+            events_by_post[post.instagram_post_id].append(event)
 ```
 
 ## Step 6: Save Results
 
 ```python
 from schemas.sqlite_storage import SqliteStorage
-from schemas.event import EventCollection
 
 db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
-collection = EventCollection(events=events)
 storage = SqliteStorage(db_path)
-storage.save(collection)
+
+# Save profile, posts, and events with FK relationships
+result = storage.save_instagram_scrape(
+    profile=profile,
+    posts=posts,
+    events_by_post=events_by_post
+)
 ```
 
 ## Step 7: Report Summary

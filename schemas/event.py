@@ -7,7 +7,7 @@ into a common format for newsletter generation.
 
 from datetime import date, datetime, time
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 import hashlib
 
 from pydantic import BaseModel, Field, field_validator
@@ -34,6 +34,72 @@ class EventCategory(str, Enum):
     MARKET = "market"
     WORKSHOP = "workshop"
     OTHER = "other"
+
+
+class InstagramProfile(BaseModel):
+    """Instagram profile/account data."""
+
+    instagram_id: str = Field(..., description="Instagram's numeric account ID")
+    handle: str = Field(..., description="Username without @")
+    full_name: str | None = None
+    bio: str | None = None
+    followers_count: int | None = None
+    following_count: int | None = None
+    post_count: int | None = None
+    profile_pic_url: str | None = None
+    is_verified: bool = False
+    external_url: str | None = None
+
+    @field_validator("handle")
+    @classmethod
+    def strip_at_symbol(cls, v: str) -> str:
+        return v.lstrip("@").strip()
+
+
+class InstagramPost(BaseModel):
+    """Instagram post data from ScrapeCreators API."""
+
+    instagram_post_id: str = Field(..., description="Instagram's post ID (numeric string)")
+    shortcode: str | None = Field(None, description="Post shortcode used in URLs")
+    post_url: str
+    caption: str | None = None
+    media_type: Literal["photo", "video", "carousel", "reel"] = "photo"
+    display_url: str | None = None
+    like_count: int = 0
+    comment_count: int = 0
+    posted_at: datetime
+
+    @classmethod
+    def from_api_response(cls, node: dict[str, Any], scraped_at: datetime | None = None) -> "InstagramPost":
+        """Create InstagramPost from ScrapeCreators API response node."""
+        # Extract caption from nested structure
+        caption = None
+        if edges := node.get("edge_media_to_caption", {}).get("edges", []):
+            caption = edges[0].get("node", {}).get("text")
+
+        # Map __typename to media_type
+        typename = node.get("__typename", "GraphImage")
+        media_type_map = {
+            "GraphImage": "photo",
+            "GraphVideo": "video",
+            "GraphSidecar": "carousel",
+        }
+        media_type = media_type_map.get(typename, "photo")
+
+        # Convert Unix timestamp to datetime
+        posted_at = datetime.fromtimestamp(node.get("taken_at_timestamp", 0))
+
+        return cls(
+            instagram_post_id=node.get("id", ""),
+            shortcode=node.get("shortcode"),
+            post_url=node.get("url", ""),
+            caption=caption,
+            media_type=media_type,
+            display_url=node.get("display_url"),
+            like_count=node.get("edge_liked_by", {}).get("count", 0),
+            comment_count=node.get("edge_media_to_comment", {}).get("count", 0),
+            posted_at=posted_at,
+        )
 
 
 class Venue(BaseModel):
@@ -93,6 +159,9 @@ class Event(BaseModel):
     needs_review: bool = False
     review_notes: str | None = None
     scraped_at: datetime | None = None
+
+    # Instagram source (optional - only set for Instagram events)
+    post_id: int | None = Field(default=None, description="FK to posts table (nullable for non-Instagram events)")
 
     # Computed (set in model_post_init)
     unique_key: str = ""
