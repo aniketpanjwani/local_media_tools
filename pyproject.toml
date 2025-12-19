@@ -1,7 +1,7 @@
 [project]
-name = "newsletter-events"
+name = "local-media-tools"
 version = "0.1.0"
-description = "Claude Code plugin for local newsletter event automation"
+description = "Claude Code plugin providing AI-powered skills for local media publications"
 requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31.0",

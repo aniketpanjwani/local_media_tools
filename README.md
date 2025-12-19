@@ -1,15 +1,22 @@
-# Newsletter Events
+# Local Media Tools
 
-A Claude Code plugin for automated local newsletter generation. Scrapes events from Instagram and Facebook, deduplicates across sources, and generates formatted markdown newsletters.
+A Claude Code plugin providing AI-powered skills for local media publications. Automate event curation, content research, and newsletter generation for hyperlocal journalism.
 
-## Purpose
+**Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
 
-This tool automates the full lifecycle of creating a local events newsletter:
+## About
 
+Local Media Tools is a collection of Claude Code skills designed specifically for local media publications—community newsletters, hyperlocal news sites, and regional event guides. The plugin automates tedious research and curation tasks so publishers can focus on storytelling.
+
+### Current Skills
+
+**Newsletter Events** - Automated local events newsletter generation:
 1. **Discover** - Find Instagram and Facebook event sources for any city
 2. **Research** - Scrape configured sources for upcoming events (including location-based Facebook discovery)
 3. **Deduplicate** - Use fuzzy matching to merge duplicate events
 4. **Write** - Generate a formatted markdown newsletter grouped by day
+
+*More skills coming soon.*
 
 ## Requirements
 
@@ -192,6 +199,17 @@ uv run pytest tests/ -v
 uv sync
 bun install
 ```
+
+## Support & Contact
+
+Need help using this plugin or want to request new features?
+
+- **Email:** [aniket@contentquant.io](mailto:aniket@contentquant.io)
+- **YouTube:** [@aniketapanjwani](https://www.youtube.com/@aniketapanjwani)
+
+## Author
+
+**Aniket Panjwani** - Building tools for local media and hyperlocal journalism.
 
 ## License
 
