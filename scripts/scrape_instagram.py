@@ -15,8 +15,9 @@ from urllib3.util.retry import Retry
 
 logger = structlog.get_logger()
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from stable config directory
+_env_path = Path.home() / ".config" / "local-media-tools" / ".env"
+load_dotenv(_env_path)
 
 
 class RateLimiter:
@@ -132,10 +133,10 @@ class ScrapeCreatorsClient:
     ) -> dict[str, Any]:
         """Fetch paginated Instagram posts."""
         handle = handle.lstrip("@").strip()
-        params: dict[str, Any] = {"limit": limit}
+        params: dict[str, Any] = {"handle": handle, "limit": limit}
         if next_max_id:
             params["next_max_id"] = next_max_id
-        return self._make_request("GET", f"/v1/instagram/user/posts/{handle}", params=params)
+        return self._make_request("GET", "/v1/instagram/user/posts", params=params)
 
 def download_image(url: str, output_dir: Path, filename: str) -> Path | None:
     """

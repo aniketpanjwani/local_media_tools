@@ -7,13 +7,16 @@ Claude does the event extraction from the returned markdown.
 
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 import structlog
 from dotenv import load_dotenv
 from firecrawl import FirecrawlApp
 
-load_dotenv()
+# Load environment variables from stable config directory
+_env_path = Path.home() / ".config" / "local-media-tools" / ".env"
+load_dotenv(_env_path)
 logger = structlog.get_logger()
 
 
