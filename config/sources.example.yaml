@@ -1,67 +1,124 @@
+# Local Media Tools - Source Configuration
+# =========================================
+# Configure your event sources here. Run /research to scrape all enabled sources.
+# Output: tmp/extraction/events.json
+
 newsletter:
-  name: "My Local Events"
-  region: "Hudson Valley, NY"
-  week_start: "tuesday"  # Newsletter week runs Tue-Mon
+  name: "My Local Events"      # Project name (used in output metadata)
+  region: "Hudson Valley, NY"  # Target region for events
+
+# ============================================================================
+# SOURCES
+# ============================================================================
 
 sources:
+  # --------------------------------------------------------------------------
+  # INSTAGRAM
+  # Scrapes public Instagram profiles for event announcements.
+  # Requires: SCRAPECREATORS_API_KEY in .env
+  # --------------------------------------------------------------------------
   instagram:
     enabled: true
     accounts:
-      - handle: "local_venue"
-        name: "Local Venue"
-        type: "music_venue"
-        location: "Kingston, NY"
-        notes: "Live music Wed-Sun"
+      # Music venue example - live performances
+      - handle: "local_venue"        # Instagram handle (without @)
+        name: "Local Venue"          # Display name for output
+        type: "music_venue"          # Type: music_venue, bar, restaurant, gallery, theater
+        location: "Kingston, NY"     # City/location (helps with deduplication)
+        notes: "Live music Wed-Sun"  # Optional notes for reference
+
+      # Aggregator example - account that posts about multiple venues
       - handle: "events_aggregator"
         name: "Events Aggregator"
-        type: "aggregator"
+        type: "aggregator"           # Type: aggregator (posts about many venues)
         location: "Hudson Valley"
+
+      # Promoter example - throws events at various venues
+      # - handle: "local_promoter"
+      #   name: "Local Promoter"
+      #   type: "promoter"
+      #   location: "Hudson Valley"
+
+    # Priority handles appear first in output (optional)
     priority_handles:
       - "local_venue"
 
+  # --------------------------------------------------------------------------
+  # FACEBOOK
+  # Scrapes Facebook event pages and location-based event discovery.
+  # Pages: Uses Node.js subprocess (facebook-event-scraper)
+  # Locations: Requires Chrome MCP + Facebook login in Chrome
+  # --------------------------------------------------------------------------
   facebook:
     enabled: true
+
+    # Facebook pages with /events URLs
     pages:
       - url: "https://facebook.com/localvenue/events"
         name: "Local Venue"
-    groups: []  # Group event scraping (may require auth)
-    # Location-based discovery via Chrome MCP (requires Facebook login in Chrome)
-    # Run /setup-location to interactively find your city's location_id
+      # - url: "https://facebook.com/anothervenue/events"
+      #   name: "Another Venue"
+
+    # Facebook groups (may require auth)
+    groups: []
+
+    # Location-based discovery (requires Chrome MCP + Facebook login)
+    # Run /setup-location to find your city's location_id
     locations: []
     # Example:
     # locations:
-    #   - location_id: "111841478834264"
-    #     location_name: "Medellín, Antioquia"
-    #     date_filter: "THIS_WEEK"  # or THIS_WEEKEND, THIS_MONTH
-    #     scroll_count: 3  # More scrolls = more events (but slower)
-    #     scroll_delay_seconds: 5.0  # Higher = safer from rate limits
+    #   - location_id: "111841478834264"        # Facebook location ID
+    #     location_name: "Medellín, Antioquia"  # Human-readable name
+    #     date_filter: "THIS_WEEK"              # THIS_WEEK, THIS_WEEKEND, THIS_MONTH
+    #     scroll_count: 3                       # More scrolls = more events (slower)
+    #     scroll_delay_seconds: 5.0             # Higher = safer from rate limits
 
-  eventbrite:
-    enabled: false  # Phase 2
-    organizers: []
-
-  # Web aggregator sources (event listing websites)
-  # Requires FIRECRAWL_API_KEY in .env
+  # --------------------------------------------------------------------------
+  # WEB AGGREGATORS
+  # Scrapes event listing websites using Firecrawl.
+  # Requires: FIRECRAWL_API_KEY in .env
+  # --------------------------------------------------------------------------
   web_aggregators:
     enabled: true
     sources: []
-    # Example:
-    # sources:
-    #   - url: "https://example.com/events"
-    #     name: "Local Events Calendar"
-    #     source_type: "listing"  # calendar, listing, or venue
-    #     event_url_pattern: "/events/*"  # Optional: filter URLs
-    #     max_pages: 50
-    #     extraction_hints: "Events are displayed as cards with date, title, and venue"
+    # Example configurations:
+    #
+    # Event listing site (list of events on one or more pages)
+    # - url: "https://hudsonvalleyevents.com"
+    #   name: "Hudson Valley Events"
+    #   source_type: "listing"
+    #   max_pages: 50
+    #
+    # Calendar-style site (events organized by date)
+    # - url: "https://localcalendar.com/events"
+    #   name: "Local Calendar"
+    #   source_type: "calendar"
+    #   event_url_pattern: "/event/*"   # Only scrape URLs matching this pattern
+    #   max_pages: 30
+    #
+    # Venue site (single venue's event page)
+    # - url: "https://thevenue.com/schedule"
+    #   name: "The Venue"
+    #   source_type: "venue"
+    #   extraction_hints: "Events in table rows with date, artist, and time"
 
-output:
-  template: "templates/newsletter.md.j2"
-  path: "tmp/output/"
-  include_images: true
+  # --------------------------------------------------------------------------
+  # EVENTBRITE (Future)
+  # --------------------------------------------------------------------------
+  eventbrite:
+    enabled: false
+    organizers: []
+
+# ============================================================================
+# FILTERS
+# ============================================================================
 
 filters:
   date_range:
-    start: "today"
-    end: "+7days"
-  categories: []  # Empty = all categories
-  exclude_keywords: ["cancelled", "postponed", "rescheduled"]
+    start: "today"     # Start date for event filtering
+    end: "+7days"      # End date (relative or absolute)
+  categories: []       # Empty = all categories
+  exclude_keywords:    # Skip events containing these words
+    - "cancelled"
+    - "postponed"
+    - "rescheduled"

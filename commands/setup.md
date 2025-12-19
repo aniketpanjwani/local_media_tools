@@ -79,8 +79,8 @@ grep -q "SCRAPECREATORS_API_KEY=." .env 2>/dev/null && \
 **If sources.yaml is still template:**
 > No event sources configured yet.
 >
-> Run `/discover [your city]` to find Instagram and Facebook event sources.
-> Example: `/discover Portland, Oregon`
+> Copy `config/sources.example.yaml` to `config/sources.yaml` and add your sources.
+> See `sources.example.yaml` for detailed configuration examples.
 
 **Check Firecrawl API key (if web aggregators configured):**
 
@@ -116,12 +116,12 @@ Local Media Tools Setup Status
 ✅ Node dependencies installed
 ⚠️  API key not configured - Instagram scraping won't work
 ⚠️  Firecrawl key not configured - web aggregator scraping won't work
-⚠️  No sources configured - run /discover [city]
+⚠️  No sources configured
 
 Next steps:
 1. Add API key to .env
 2. Add Firecrawl key to .env (if using web aggregators)
-3. Run /discover [city] to find event sources
+3. Configure sources in config/sources.yaml
 4. Run /research to start scraping
 ```
 
@@ -166,4 +166,4 @@ This returns structured JSON:
 | .env missing | Copy from .env.example, then continue |
 | API key missing | Warn but continue (optional for Facebook-only users) |
 | Firecrawl key missing | Warn but continue (only needed for web aggregators) |
-| sources.yaml missing | Copy from template, guide to /discover |
+| sources.yaml missing | Copy from template, guide to configuration |

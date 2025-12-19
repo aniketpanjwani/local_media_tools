@@ -1,12 +1,12 @@
 {
   "name": "local-media-tools",
-  "version": "0.1.0",
-  "description": "AI-powered skills for local media publications. Automate event curation, content research, and newsletter generation for hyperlocal journalism.",
+  "version": "0.2.0",
+  "description": "Scrape local events from Instagram, Facebook, and web sources. Get structured JSON data for your own workflows.",
   "author": {
     "name": "Aniket Panjwani",
     "email": "aniket@contentquant.io"
   },
   "homepage": "https://github.com/aniketpanjwani/local_media_tools",
-  "keywords": ["local-media", "newsletter", "events", "hyperlocal", "journalism", "instagram", "facebook"],
+  "keywords": ["events", "scraping", "instagram", "facebook", "local-events"],
   "license": "MIT"
 }

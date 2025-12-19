@@ -1,22 +1,20 @@
 # Local Media Tools
 
-A Claude Code plugin providing AI-powered skills for local media publications. Automate event curation, content research, and newsletter generation for hyperlocal journalism.
+A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources. Get structured JSON data for your own workflows.
 
 **Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
 
 ## About
 
-Local Media Tools is a collection of Claude Code skills designed specifically for local media publications—community newsletters, hyperlocal news sites, and regional event guides. The plugin automates tedious research and curation tasks so publishers can focus on storytelling.
+Local Media Tools scrapes event data from configured sources and outputs structured JSON. You configure your sources (Instagram accounts, Facebook pages, web aggregators), run `/research`, and get deduplicated event data.
 
-### Current Skills
+### What It Does
 
-**Newsletter Events** - Automated local events newsletter generation:
-1. **Discover** - Find Instagram and Facebook event sources for any city
-2. **Research** - Scrape configured sources for upcoming events (including location-based Facebook discovery)
-3. **Deduplicate** - Use fuzzy matching to merge duplicate events
-4. **Write** - Generate a formatted markdown newsletter grouped by day
-
-*More skills coming soon.*
+1. **Scrape Instagram** - Public profiles via ScrapeCreators API
+2. **Scrape Facebook** - Event pages and location-based discovery
+3. **Scrape Web Aggregators** - Event listing websites via Firecrawl
+4. **Deduplicate** - Fuzzy matching to merge duplicate events
+5. **Output JSON** - Structured event data at `tmp/extraction/events.json`
 
 ## Quick Start
 
@@ -31,19 +29,16 @@ Local Media Tools is a collection of Claude Code skills designed specifically fo
 The `/setup` command will guide you through:
 1. Installing runtime dependencies (uv, bun)
 2. Installing Python and Node packages
-3. Configuring your API key
-4. Finding event sources for your city
+3. Configuring your API keys
 
 ### After Setup
 
 1. **Get API key** at [scrapecreators.com](https://scrapecreators.com) (required for Instagram)
 2. **Add key** to `.env`: `SCRAPECREATORS_API_KEY=your_key`
-3. **Discover sources** for your city: `/discover Portland, Oregon`
-4. **Start researching**: `/research`
+3. **Configure sources** in `config/sources.yaml` (copy from `sources.example.yaml`)
+4. **Run scraping**: `/research`
 
 ### Manual Installation (Advanced)
-
-For development or offline use:
 
 ```bash
 git clone https://github.com/aniketpanjwani/local_media_tools
@@ -61,86 +56,20 @@ cd local_media_tools
 
 ## Usage
 
-Run commands via Claude Code:
-
 ```bash
-# Discover sources for a new city
-claude /discover Winnipeg, Manitoba, Canada
+# Scrape all configured sources
+claude /research
 
-# Full workflow: research + write
-claude /full-run
+# Setup environment
+claude /setup
 
-# Or run phases separately:
-claude /research    # Scrape all sources
-claude /write       # Generate newsletter from collected events
-
-# With custom title:
-claude /full-run "Hudson Valley Weekend Events"
-```
-
-### Starting a New Newsletter
-
-1. **Discover sources** for your city:
-   ```bash
-   claude /discover "Portland, Oregon, USA"
-   ```
-   This searches for local venues, promoters, and event aggregators, then generates a YAML config snippet.
-
-2. **Add sources** to `config/sources.yaml`
-
-3. **Research and write**:
-   ```bash
-   claude /full-run
-   ```
-
-## Project Structure
-
-This is a Claude Code plugin with the following structure:
-
-```
-├── .claude-plugin/
-│   ├── plugin.json         # Plugin manifest
-│   ├── marketplace.json    # Marketplace catalog for /plugin install
-│   └── hooks.json          # Post-install automation hooks
-├── commands/               # Slash commands
-│   ├── discover.md         # /discover - Find sources for a city
-│   ├── research.md         # /research - Scrape all sources
-│   ├── write.md            # /write - Generate newsletter
-│   ├── full-run.md         # /full-run - Research + write
-│   ├── setup.md            # /setup - Environment setup
-│   └── setup-location.md   # /setup-location - Configure Facebook location_id
-├── skills/                 # Claude Code skills
-│   ├── newsletter-events-discover/   # Source discovery for new cities
-│   ├── newsletter-events-research/   # Event scraping workflows
-│   ├── newsletter-events-setup/      # Environment setup
-│   └── newsletter-events-write/      # Newsletter generation
-├── agents/                 # Proactive agents
-│   └── config-validator.md # Validates config before research
-├── config/
-│   ├── config_schema.py    # Pydantic config models
-│   └── sources.example.yaml
-├── schemas/
-│   ├── event.py            # Event/Venue Pydantic models
-│   └── storage.py          # Atomic file I/O
-├── scripts/
-│   ├── post-install.sh     # Post-install hook (creates dirs, copies templates)
-│   ├── validate_setup.py   # Machine-readable setup validation
-│   ├── scrape_instagram.py # ScrapeCreators API client
-│   ├── scrape_facebook.js  # Facebook page scraper (bun/Node.js)
-│   ├── facebook_bridge.py  # Python-to-JS subprocess bridge
-│   ├── facebook_discover.py # Facebook location-based discovery utilities
-│   ├── deduplicate.py      # Fuzzy matching deduplication
-│   └── generate_newsletter.py
-├── templates/
-│   └── newsletter.md.j2    # Jinja2 newsletter template
-├── tests/
-└── tmp/                    # Working directory (gitignored)
-    └── extraction/         # Raw data, images, events.json
+# Configure Facebook location discovery
+claude /setup-location
 ```
 
 ## Configuration
 
-Edit `config/sources.yaml`:
+Edit `config/sources.yaml` (see `sources.example.yaml` for full documentation):
 
 ```yaml
 newsletter:
@@ -151,13 +80,13 @@ sources:
   instagram:
     enabled: true
     accounts:
-      - handle: "venue_instagram"
-        name: "The Venue"
-        type: "venue"
+      - handle: "local_venue"
+        name: "Local Venue"
+        type: "music_venue"
+        location: "Kingston, NY"
 
   facebook:
     enabled: true
-    # Scrape specific Facebook pages
     pages:
       - url: "https://facebook.com/venue/events"
         name: "The Venue"
@@ -165,29 +94,74 @@ sources:
     locations:
       - location_id: "111841478834264"
         location_name: "Medellín, Antioquia"
-        date_filter: "THIS_WEEK"  # or THIS_WEEKEND, THIS_MONTH
+        date_filter: "THIS_WEEK"
+
+  web_aggregators:
+    enabled: true
+    sources:
+      - url: "https://localevents.com"
+        name: "Local Events"
+        source_type: "listing"
 ```
 
 ### Setting Up Facebook Location Discovery
 
-Facebook location-based discovery uses Chrome MCP to scrape Facebook's events page while logged in. To configure:
+Facebook location-based discovery uses Chrome MCP to scrape Facebook's events page while logged in:
 
 1. **Install Chrome MCP Server** and ensure it's running
 2. **Log into Facebook** in Chrome
-3. **Run the setup command**:
-   ```bash
-   claude /setup-location
-   ```
-   This will guide you through finding your city's `location_id` and save it to config.
+3. **Run the setup command**: `/setup-location`
 
 ## Output
 
-Generated newsletters are saved to `output/newsletter_YYYY-MM-DD.md` with:
+Scraped events are saved to `tmp/extraction/events.json`:
 
-- Events grouped by day
-- Venue, time, and ticket information
-- Links to original sources
-- Flagged items needing manual review
+```json
+{
+  "events": [
+    {
+      "title": "Live Music Night",
+      "venue": {"name": "Local Venue", "city": "Kingston"},
+      "event_date": "2024-01-15",
+      "start_time": "20:00",
+      "source": "instagram",
+      "confidence": 0.9
+    }
+  ],
+  "schema_version": "1.0.0",
+  "scraped_at": "2024-01-10T12:00:00Z"
+}
+```
+
+## Project Structure
+
+```
+├── .claude-plugin/
+│   └── plugin.json         # Plugin manifest
+├── commands/
+│   ├── research.md         # /research - Scrape all sources
+│   ├── setup.md            # /setup - Environment setup
+│   └── setup-location.md   # /setup-location - Facebook location setup
+├── skills/
+│   ├── newsletter-events-research/   # Event scraping workflows
+│   └── newsletter-events-setup/      # Environment setup
+├── config/
+│   ├── config_schema.py    # Pydantic config models
+│   └── sources.example.yaml
+├── schemas/
+│   ├── event.py            # Event/Venue Pydantic models
+│   └── storage.py          # Atomic file I/O
+├── scripts/
+│   ├── scrape_instagram.py # ScrapeCreators API client
+│   ├── scrape_facebook.js  # Facebook page scraper (bun/Node.js)
+│   ├── scrape_firecrawl.py # Web aggregator scraper
+│   ├── facebook_bridge.py  # Python-to-JS subprocess bridge
+│   ├── facebook_discover.py # Facebook location-based utilities
+│   └── deduplicate.py      # Fuzzy matching deduplication
+├── tests/
+└── tmp/                    # Working directory (gitignored)
+    └── extraction/         # Raw data, images, events.json
+```
 
 ## Limitations
 
@@ -195,15 +169,15 @@ Generated newsletters are saved to `output/newsletter_YYYY-MM-DD.md` with:
 - Only works for public events
 - May break when Facebook changes their HTML structure
 - Rate limiting and bot detection may block requests
-- Some pages may require proxy configuration for heavy use
 
 **Facebook location discovery:** Uses Chrome MCP to scrape while logged in:
 - Requires Chrome browser with active Facebook session
 - Requires Chrome MCP Server to be running
-- `location_id` must be configured manually (one-time setup per city)
-- Events discovered have sparse data (title, date, venue) and are marked for review
+- Events discovered have sparse data and are marked for review
 
 **Instagram scraper:** Requires a paid ScrapeCreators API key. Rate limits apply per your plan.
+
+**Web aggregators:** Requires a Firecrawl API key. Only needed if using web aggregator sources.
 
 ## Development
 
@@ -217,8 +191,6 @@ bun install
 ```
 
 ## Support & Contact
-
-Need help using this plugin or want to request new features?
 
 - **Email:** [aniket@contentquant.io](mailto:aniket@contentquant.io)
 - **YouTube:** [@aniketapanjwani](https://www.youtube.com/@aniketapanjwani)

@@ -1,12 +1,11 @@
 [project]
 name = "local-media-tools"
-version = "0.1.0"
+version = "0.2.0"
 description = "Claude Code plugin providing AI-powered skills for local media publications"
 requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31.0",
     "python-dotenv>=1.0.0",
-    "jinja2>=3.1.0",
     "rapidfuzz>=3.0.0",
     "pydantic>=2.0.0",
     "pyyaml>=6.0.0",

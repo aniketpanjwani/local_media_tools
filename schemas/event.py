@@ -135,9 +135,8 @@ class EventCollection(BaseModel):
     """Collection of events with deduplication support."""
 
     events: list[Event] = Field(default_factory=list)
-    week_start: date | None = None
-    week_end: date | None = None
     schema_version: str = "1.0.0"
+    scraped_at: datetime | None = None
 
     def add_event(self, event: Event) -> bool:
         """Add event if not duplicate. Returns True if added."""
