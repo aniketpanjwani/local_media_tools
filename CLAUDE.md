@@ -40,6 +40,11 @@ This plugin uses two runtimes:
 ## Project Structure
 
 ```
+.claude-plugin/    # Plugin manifest
+  plugin.json
+commands/          # Slash commands
+skills/            # Skills with workflows and references
+agents/            # Proactive agents
 scripts/           # Scrapers and utilities
 config/            # Configuration files
 schemas/           # Pydantic data models

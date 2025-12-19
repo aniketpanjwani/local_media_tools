@@ -11,7 +11,8 @@ This skill gathers raw event data from configured sources. It does NOT write new
 ### Data Sources
 
 1. **Instagram** - Via ScrapeCreators API (requires API key)
-2. **Facebook** - Via facebook-event-scraper npm package (Node.js subprocess)
+2. **Facebook Pages** - Via facebook-event-scraper npm package (Node.js subprocess)
+3. **Facebook Discover** - Via Chrome MCP (location-based discovery, requires Chrome login)
 
 ### Output
 
@@ -29,8 +30,9 @@ Research produces structured data saved to `tmp/`:
 What would you like to research?
 
 1. **Instagram** - Scrape Instagram accounts for events
-2. **Facebook** - Scrape Facebook pages for events
-3. **All sources** - Full research from all configured sources
+2. **Facebook Pages** - Scrape specific Facebook pages for events
+3. **Facebook Discover** - Discover events by location (requires Chrome MCP + Facebook login)
+4. **All sources** - Full research from all configured sources
 
 **Wait for response before proceeding.**
 </intake>
@@ -39,8 +41,9 @@ What would you like to research?
 | Response | Workflow |
 |----------|----------|
 | 1, "instagram", "ig" | `workflows/research-instagram.md` |
-| 2, "facebook", "fb" | `workflows/research-facebook.md` |
-| 3, "all", "both", "full" | `workflows/research-all.md` |
+| 2, "facebook pages", "fb pages" | `workflows/research-facebook.md` |
+| 3, "facebook discover", "fb discover", "discover" | `workflows/research-facebook-discover.md` |
+| 4, "all", "both", "full" | `workflows/research-all.md` |
 </routing>
 
 <reference_index>
@@ -48,6 +51,7 @@ All domain knowledge in `references/`:
 
 **APIs:** scrapecreators-api.md, facebook-scraper-api.md
 **Detection:** event-detection.md
+**Setup:** facebook-location-setup.md (for location-based discovery)
 </reference_index>
 
 <workflows_index>
@@ -55,6 +59,7 @@ All domain knowledge in `references/`:
 |----------|---------|
 | research-instagram.md | Scrape Instagram, download images, extract events |
 | research-facebook.md | Scrape Facebook pages for events |
+| research-facebook-discover.md | Discover events by location via Chrome MCP |
 | research-all.md | Run all research workflows |
 </workflows_index>
 

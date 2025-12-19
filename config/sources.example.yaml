@@ -25,6 +25,16 @@ sources:
       - url: "https://facebook.com/localvenue/events"
         name: "Local Venue"
     groups: []  # Group event scraping (may require auth)
+    # Location-based discovery via Chrome MCP (requires Facebook login in Chrome)
+    # Run /setup-location to interactively find your city's location_id
+    locations: []
+    # Example:
+    # locations:
+    #   - location_id: "111841478834264"
+    #     location_name: "Medellín, Antioquia"
+    #     date_filter: "THIS_WEEK"  # or THIS_WEEKEND, THIS_MONTH
+    #     scroll_count: 3  # More scrolls = more events (but slower)
+    #     scroll_delay_seconds: 5.0  # Higher = safer from rate limits
 
   eventbrite:
     enabled: false  # Phase 2

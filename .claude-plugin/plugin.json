@@ -1,0 +1,10 @@
+{
+  "name": "newsletter-events",
+  "version": "0.1.0",
+  "description": "Automate local newsletter event curation by scraping Instagram and Facebook. Discover event sources, research upcoming events, and generate newsletter markdown.",
+  "author": {
+    "name": "Aniket Panjwani"
+  },
+  "keywords": ["newsletter", "events", "instagram", "facebook", "scraping", "local-events"],
+  "license": "MIT"
+}

@@ -7,7 +7,7 @@ A Claude Code plugin for automated local newsletter generation. Scrapes events f
 This tool automates the full lifecycle of creating a local events newsletter:
 
 1. **Discover** - Find Instagram and Facebook event sources for any city
-2. **Research** - Scrape configured sources for upcoming events
+2. **Research** - Scrape configured sources for upcoming events (including location-based Facebook discovery)
 3. **Deduplicate** - Use fuzzy matching to merge duplicate events
 4. **Write** - Generate a formatted markdown newsletter grouped by day
 
@@ -15,8 +15,9 @@ This tool automates the full lifecycle of creating a local events newsletter:
 
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/) - Python package manager
-- [bun](https://bun.sh/) - JavaScript runtime (for Facebook scraping)
+- [bun](https://bun.sh/) - JavaScript runtime (for Facebook page scraping)
 - [Claude Code](https://claude.com/claude-code) - CLI tool
+- [Chrome MCP Server](https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-servers/chrome) - For Facebook location-based discovery (optional)
 
 ## Setup
 
@@ -75,14 +76,25 @@ claude /full-run "Hudson Valley Weekend Events"
 
 ## Project Structure
 
+This is a Claude Code plugin with the following structure:
+
 ```
-├── .claude/
-│   ├── commands/           # Slash commands (/discover, /research, /write, etc.)
-│   └── skills/             # Claude Code skills
-│       ├── newsletter-events-discover/   # Source discovery for new cities
-│       ├── newsletter-events-research/   # Event scraping workflows
-│       ├── newsletter-events-setup/      # Environment setup
-│       └── newsletter-events-write/      # Newsletter generation
+├── .claude-plugin/
+│   └── plugin.json         # Plugin manifest
+├── commands/               # Slash commands
+│   ├── discover.md         # /discover - Find sources for a city
+│   ├── research.md         # /research - Scrape all sources
+│   ├── write.md            # /write - Generate newsletter
+│   ├── full-run.md         # /full-run - Research + write
+│   ├── setup.md            # /setup - Environment setup
+│   └── setup-location.md   # /setup-location - Configure Facebook location_id
+├── skills/                 # Claude Code skills
+│   ├── newsletter-events-discover/   # Source discovery for new cities
+│   ├── newsletter-events-research/   # Event scraping workflows
+│   ├── newsletter-events-setup/      # Environment setup
+│   └── newsletter-events-write/      # Newsletter generation
+├── agents/                 # Proactive agents
+│   └── config-validator.md # Validates config before research
 ├── config/
 │   ├── config_schema.py    # Pydantic config models
 │   └── sources.example.yaml
@@ -91,8 +103,9 @@ claude /full-run "Hudson Valley Weekend Events"
 │   └── storage.py          # Atomic file I/O
 ├── scripts/
 │   ├── scrape_instagram.py # ScrapeCreators API client
-│   ├── scrape_facebook.js  # Facebook scraper (bun/Node.js)
+│   ├── scrape_facebook.js  # Facebook page scraper (bun/Node.js)
 │   ├── facebook_bridge.py  # Python-to-JS subprocess bridge
+│   ├── facebook_discover.py # Facebook location-based discovery utilities
 │   ├── deduplicate.py      # Fuzzy matching deduplication
 │   └── generate_newsletter.py
 ├── templates/
@@ -121,10 +134,28 @@ sources:
 
   facebook:
     enabled: true
+    # Scrape specific Facebook pages
     pages:
       - url: "https://facebook.com/venue/events"
         name: "The Venue"
+    # Location-based discovery (requires Chrome MCP + Facebook login)
+    locations:
+      - location_id: "111841478834264"
+        location_name: "Medellín, Antioquia"
+        date_filter: "THIS_WEEK"  # or THIS_WEEKEND, THIS_MONTH
 ```
+
+### Setting Up Facebook Location Discovery
+
+Facebook location-based discovery uses Chrome MCP to scrape Facebook's events page while logged in. To configure:
+
+1. **Install Chrome MCP Server** and ensure it's running
+2. **Log into Facebook** in Chrome
+3. **Run the setup command**:
+   ```bash
+   claude /setup-location
+   ```
+   This will guide you through finding your city's `location_id` and save it to config.
 
 ## Output
 
@@ -137,11 +168,17 @@ Generated newsletters are saved to `output/newsletter_YYYY-MM-DD.md` with:
 
 ## Limitations
 
-**Facebook scraper:** Uses [facebook-event-scraper](https://github.com/francescov1/facebook-event-scraper) which scrapes public pages without an official API. This can be unreliable:
+**Facebook page scraper:** Uses [facebook-event-scraper](https://github.com/francescov1/facebook-event-scraper) which scrapes public pages without an official API. This can be unreliable:
 - Only works for public events
 - May break when Facebook changes their HTML structure
 - Rate limiting and bot detection may block requests
 - Some pages may require proxy configuration for heavy use
+
+**Facebook location discovery:** Uses Chrome MCP to scrape while logged in:
+- Requires Chrome browser with active Facebook session
+- Requires Chrome MCP Server to be running
+- `location_id` must be configured manually (one-time setup per city)
+- Events discovered have sparse data (title, date, venue) and are marked for review
 
 **Instagram scraper:** Requires a paid ScrapeCreators API key. Rate limits apply per your plan.
 
