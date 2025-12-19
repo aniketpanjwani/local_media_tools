@@ -112,5 +112,5 @@ sources:
 
 ## Output
 
-- **Events database**: `~/.config/local-media-tools/data/events.db` (SQLite)
+- **Events database**: `~/.config/local-media-tools/data/events.db` (SQLite with `venues`, `events`, `profiles`, `posts` tables)
 - **Newsletters**: `./newsletter_YYYY-MM-DD.md` (in current directory)

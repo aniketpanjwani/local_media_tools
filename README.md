@@ -10,7 +10,7 @@ Local Media Tools scrapes event data from configured sources and stores it in SQ
 
 ### What It Does
 
-1. **Scrape Instagram** - Public profiles via ScrapeCreators API
+1. **Scrape Instagram** - Public profiles via ScrapeCreators API (handles multi-event posts)
 2. **Scrape Facebook** - Event pages and location-based discovery
 3. **Scrape Web Aggregators** - Event listing websites via Firecrawl
 4. **Deduplicate** - Fuzzy matching to merge duplicate events/venues
@@ -124,10 +124,13 @@ Facebook location-based discovery uses Chrome MCP to scrape Facebook's events pa
 2. **Log into Facebook** in Chrome
 3. **Run the setup command**: `/newsletter-events:setup-location`
 
+The discovery process is interactive - Claude navigates to Facebook's events page and you scroll to load more events. This ensures reliable data capture without automated scrolling detection.
+
 ## Output
 
 **Events Database:** `~/.config/local-media-tools/data/events.db` (SQLite)
-- Normalized schema with separate `venues` and `events` tables
+- Normalized schema with `venues`, `events`, `profiles`, and `posts` tables
+- Instagram posts linked to extracted events for traceability
 - Venue deduplication via Instagram handle + fuzzy name matching (85% threshold)
 - Query by date range, source, or category
 
@@ -168,8 +171,8 @@ Facebook location-based discovery uses Chrome MCP to scrape Facebook's events pa
 │   ├── config_schema.py    # Pydantic config models
 │   └── sources.example.yaml
 ├── schemas/
-│   ├── event.py            # Event/Venue Pydantic models
-│   ├── sqlite_storage.py   # SQLite backend with venue deduplication
+│   ├── event.py            # Event/Venue/InstagramPost/InstagramProfile Pydantic models
+│   ├── sqlite_storage.py   # SQLite backend with venue deduplication and schema migrations
 │   └── storage.py          # Atomic file I/O (legacy JSON)
 ├── scripts/
 │   ├── paths.py            # Centralized path resolver
