@@ -1,5 +1,5 @@
 ---
-name: setup-location
+name: newsletter-events:setup-location
 description: Interactively set up a Facebook location_id for event discovery using Chrome MCP
 ---
 

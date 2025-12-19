@@ -24,10 +24,10 @@ Local Media Tools scrapes event data from configured sources and stores it in SQ
 ```bash
 /plugin marketplace add aniketpanjwani/local_media_tools
 /plugin install newsletter-events
-/setup
+/newsletter-events:setup
 ```
 
-The `/setup` command will guide you through:
+The `/newsletter-events:setup` command will guide you through:
 1. Installing runtime dependencies (uv, bun)
 2. Installing Python and Node packages
 3. Configuring your API keys
@@ -58,17 +58,17 @@ cd local_media_tools
 ## Usage
 
 ```bash
+# Setup environment
+claude /newsletter-events:setup
+
 # Scrape all configured sources
-claude /research
+claude /newsletter-events:research
 
 # Generate newsletter from stored events
-claude /write
-
-# Setup environment
-claude /setup
+claude /newsletter-events:write
 
 # Configure Facebook location discovery
-claude /setup-location
+claude /newsletter-events:setup-location
 ```
 
 ## Configuration
@@ -119,7 +119,7 @@ Facebook location-based discovery uses Chrome MCP to scrape Facebook's events pa
 
 1. **Install Chrome MCP Server** and ensure it's running
 2. **Log into Facebook** in Chrome
-3. **Run the setup command**: `/setup-location`
+3. **Run the setup command**: `/newsletter-events:setup-location`
 
 ## Output
 
@@ -138,10 +138,10 @@ Facebook location-based discovery uses Chrome MCP to scrape Facebook's events pa
 ├── .claude-plugin/
 │   └── plugin.json         # Plugin manifest
 ├── commands/
-│   ├── research.md         # /research - Scrape all sources
-│   ├── write.md            # /write - Generate newsletter
-│   ├── setup.md            # /setup - Environment setup
-│   └── setup-location.md   # /setup-location - Facebook location setup
+│   ├── research.md         # /newsletter-events:research - Scrape all sources
+│   ├── write.md            # /newsletter-events:write - Generate newsletter
+│   ├── setup.md            # /newsletter-events:setup - Environment setup
+│   └── setup-location.md   # /newsletter-events:setup-location - Facebook location
 ├── skills/
 │   ├── newsletter-events-research/   # Event scraping workflows
 │   ├── newsletter-events-write/      # Newsletter generation

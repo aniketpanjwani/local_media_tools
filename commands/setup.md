@@ -1,5 +1,5 @@
 ---
-name: setup
+name: newsletter-events:setup
 description: Set up or verify Local Media Tools environment (runtimes, dependencies, config)
 ---
 

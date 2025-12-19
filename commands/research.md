@@ -1,3 +1,8 @@
+---
+name: newsletter-events:research
+description: Research and collect events from all configured sources (Instagram and Facebook)
+---
+
 # Research Events
 
 Research and collect events from all configured sources (Instagram and Facebook).

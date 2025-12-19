@@ -1,3 +1,8 @@
+---
+name: newsletter-events:write
+description: Generate a markdown newsletter from stored events
+---
+
 # Write Newsletter
 
 Generate a markdown newsletter from stored events.

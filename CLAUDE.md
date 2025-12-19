@@ -25,10 +25,10 @@ cp config/sources.example.yaml config/sources.yaml
 
 ## Commands
 
-- `/setup` - Set up or verify environment
-- `/setup-location` - Configure Facebook location-based discovery
-- `/research` - Scrape all configured sources
-- `/write` - Generate newsletter from stored events
+- `/newsletter-events:setup` - Set up or verify environment
+- `/newsletter-events:setup-location` - Configure Facebook location-based discovery
+- `/newsletter-events:research` - Scrape all configured sources
+- `/newsletter-events:write` - Generate newsletter from stored events
 
 ## Architecture
 
