@@ -18,6 +18,39 @@ Local Media Tools is a collection of Claude Code skills designed specifically fo
 
 *More skills coming soon.*
 
+## Quick Start
+
+### Installation
+
+```bash
+/plugin marketplace add https://github.com/aniketpanjwani/local_media_tools
+/plugin install local-media-tools
+/setup
+```
+
+The `/setup` command will guide you through:
+1. Installing runtime dependencies (uv, bun)
+2. Installing Python and Node packages
+3. Configuring your API key
+4. Finding event sources for your city
+
+### After Setup
+
+1. **Get API key** at [scrapecreators.com](https://scrapecreators.com) (required for Instagram)
+2. **Add key** to `.env`: `SCRAPECREATORS_API_KEY=your_key`
+3. **Discover sources** for your city: `/discover Portland, Oregon`
+4. **Start researching**: `/research`
+
+### Manual Installation (Advanced)
+
+For development or offline use:
+
+```bash
+git clone https://github.com/aniketpanjwani/local_media_tools
+cd local_media_tools
+./scripts/setup.sh
+```
+
 ## Requirements
 
 - Python 3.12+
@@ -25,27 +58,6 @@ Local Media Tools is a collection of Claude Code skills designed specifically fo
 - [bun](https://bun.sh/) - JavaScript runtime (for Facebook page scraping)
 - [Claude Code](https://claude.com/claude-code) - CLI tool
 - [Chrome MCP Server](https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-servers/chrome) - For Facebook location-based discovery (optional)
-
-## Setup
-
-1. **Clone and install dependencies:**
-   ```bash
-   ./scripts/setup.sh
-   ```
-
-2. **Configure API keys:**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your SCRAPECREATORS_API_KEY
-   ```
-
-   Get a ScrapeCreators API key at [scrapecreators.com](https://scrapecreators.com). See their [API docs](https://scrapecreators.com/docs) for pricing and usage limits.
-
-3. **Configure sources:**
-   ```bash
-   cp config/sources.example.yaml config/sources.yaml
-   # Edit sources.yaml with your venues and accounts
-   ```
 
 ## Usage
 
@@ -87,7 +99,9 @@ This is a Claude Code plugin with the following structure:
 
 ```
 ├── .claude-plugin/
-│   └── plugin.json         # Plugin manifest
+│   ├── plugin.json         # Plugin manifest
+│   ├── marketplace.json    # Marketplace catalog for /plugin install
+│   └── hooks.json          # Post-install automation hooks
 ├── commands/               # Slash commands
 │   ├── discover.md         # /discover - Find sources for a city
 │   ├── research.md         # /research - Scrape all sources
@@ -109,6 +123,8 @@ This is a Claude Code plugin with the following structure:
 │   ├── event.py            # Event/Venue Pydantic models
 │   └── storage.py          # Atomic file I/O
 ├── scripts/
+│   ├── post-install.sh     # Post-install hook (creates dirs, copies templates)
+│   ├── validate_setup.py   # Machine-readable setup validation
 │   ├── scrape_instagram.py # ScrapeCreators API client
 │   ├── scrape_facebook.js  # Facebook page scraper (bun/Node.js)
 │   ├── facebook_bridge.py  # Python-to-JS subprocess bridge

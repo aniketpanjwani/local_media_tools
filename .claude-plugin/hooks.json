@@ -1,0 +1,14 @@
+{
+  "PostInstall": [
+    {
+      "matcher": "local-media-tools",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/post-install.sh\"",
+          "timeout": 30
+        }
+      ]
+    }
+  ]
+}

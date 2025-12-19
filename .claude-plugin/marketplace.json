@@ -1,0 +1,26 @@
+{
+  "name": "aniketpanjwani-marketplace",
+  "owner": {
+    "name": "Aniket Panjwani",
+    "url": "https://github.com/aniketpanjwani"
+  },
+  "metadata": {
+    "description": "AI-powered skills for local media publications",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "local-media-tools",
+      "description": "Automate event curation, content research, and newsletter generation for hyperlocal journalism",
+      "version": "0.1.0",
+      "author": {
+        "name": "Aniket Panjwani",
+        "email": "aniket@contentquant.io",
+        "url": "https://www.youtube.com/@aniketapanjwani"
+      },
+      "homepage": "https://github.com/aniketpanjwani/local_media_tools",
+      "tags": ["local-media", "newsletter", "events", "hyperlocal", "journalism"],
+      "source": "."
+    }
+  ]
+}
