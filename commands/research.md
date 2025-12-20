@@ -12,15 +12,32 @@ Research and collect events from all configured sources (Instagram and Facebook)
 Configuration is loaded from `~/.config/local-media-tools/sources.yaml`.
 Scraped data is saved to `~/.config/local-media-tools/data/events.db`.
 
+## Critical: Use CLI Tools Only
+
+**NEVER use Firecrawl, Chrome MCP, curl, or raw API calls for Instagram.**
+
+Instagram scraping MUST use the CLI tool:
+
+```bash
+# Scrape all configured Instagram accounts
+uv run python scripts/cli_instagram.py scrape --all
+
+# Check results
+uv run python scripts/cli_instagram.py show-stats
+```
+
+The CLI tool handles:
+- Correct ScrapeCreators API parameters
+- Rate limiting and retries
+- Database storage with proper relationships
+
 ## Instructions
 
-1. Load the configuration from `~/.config/local-media-tools/sources.yaml`
-2. For each enabled source, run the appropriate research workflow:
-   - Instagram: Use `newsletter-events-research` skill, follow `workflows/research-instagram.md`
-   - Facebook: Use `newsletter-events-research` skill, follow `workflows/research-facebook.md`
-3. Deduplicate events across sources
-4. Save results to SQLite database at `~/.config/local-media-tools/data/events.db`
-5. Report summary of findings
+1. Read config from `~/.config/local-media-tools/sources.yaml`
+2. **Instagram:** Run `uv run python scripts/cli_instagram.py scrape --all`
+3. **Facebook:** Use Chrome MCP with facebook-event-scraper (Node.js subprocess)
+4. Classify posts and extract events from scraped data
+5. Report summary with `uv run python scripts/cli_instagram.py show-stats`
 
 ## Expected Output
 
