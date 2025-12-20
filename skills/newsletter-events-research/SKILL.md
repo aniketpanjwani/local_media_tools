@@ -24,6 +24,8 @@ Research produces structured data saved to `~/.config/local-media-tools/data/`:
 ### Key Principle
 
 **Images are critical.** Many venues post event details only in flyer images, not captions. Always analyze downloaded images with Claude's vision.
+
+**Image Download Requirement:** Instagram CDN URLs return 403 when accessed via WebFetch. Images MUST be downloaded using Python's `requests` library with proper User-Agent headers, then analyzed locally using the Read tool.
 </essential_principles>
 
 <critical>

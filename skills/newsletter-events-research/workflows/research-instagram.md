@@ -148,23 +148,51 @@ For each post, record:
 
 **Verify:** New Posts total MUST equal "New to Analyze" from Step 2b.
 
-## Step 4: Download and Analyze Images (Conditional)
+## Step 4: Download Images for Event Posts
 
 **Only for posts where `needs_image_analysis = True`:**
 
-### For Carousel Posts (media_type = "carousel"):
-1. The post contains MULTIPLE images in `image_urls` list
-2. Event flyers are often in positions 2, 3, or 4 (not always the first image!)
-3. Analyze each image in order until you find clear event information
-4. Note which image index contained the event flyer
+Instagram CDN URLs require proper headers. Use Python with requests to download images:
 
-### For Single Image Posts:
-1. Analyze the single `display_url` image
-2. Extract event details if visible
-
-### Image Analysis Prompt:
+```bash
+uv run python scripts/cli_instagram.py download-images --event-posts-only
 ```
-Analyze this image from an Instagram post.
+
+This downloads images for posts classified as "event" or "ambiguous" to:
+`~/.config/local-media-tools/data/images/instagram/<handle>/`
+
+**If the CLI command doesn't exist, download manually:**
+
+```python
+import requests
+from pathlib import Path
+
+def download_instagram_image(url: str, save_path: Path) -> bool:
+    """Download image with proper headers for Instagram CDN."""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+    }
+    response = requests.get(url, headers=headers, timeout=30)
+    if response.status_code == 200:
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_path.write_bytes(response.content)
+        return True
+    return False
+```
+
+**IMPORTANT:**
+- WebFetch WILL NOT WORK for Instagram CDN (returns 403)
+- You MUST use Python requests with User-Agent header
+- Download to local path, then use Read tool to analyze
+
+## Step 5: Analyze Downloaded Images
+
+**Use the Read tool to analyze downloaded images:**
+
+For each downloaded image at `~/.config/local-media-tools/data/images/instagram/<handle>/<post_id>_<index>.jpg`:
+
+```
+Read the image file and analyze:
 
 Is this an event flyer or promotional image with event details?
 
@@ -178,7 +206,17 @@ If YES, extract:
 If NO (e.g., food photo, venue shot, meme), respond: "NOT_EVENT_IMAGE"
 ```
 
-## Step 5: Extract Event Details
+### For Carousel Posts (media_type = "carousel"):
+1. The post contains MULTIPLE images - download all of them
+2. Event flyers are often in positions 2, 3, or 4 (not always the first image!)
+3. Use Read tool on each downloaded image until you find clear event information
+4. Note which image index contained the event flyer
+
+### For Single Image Posts:
+1. Download the single `display_url` image
+2. Use Read tool to analyze the downloaded file
+
+## Step 6: Extract Event Details
 
 For posts classified as events (after caption + image analysis):
 
@@ -200,7 +238,7 @@ For posts classified as events (after caption + image analysis):
 3. Live Band | 2025-01-24 | 21:00 | MAMM | $10
 ```
 
-## Step 6: Create Event Objects and Track by Post
+## Step 7: Create Event Objects and Track by Post
 
 **Only for classified events with extractable details:**
 
@@ -228,7 +266,7 @@ for post in posts:
             events_by_post[post.instagram_post_id].append(event)
 ```
 
-## Step 7: Save Results
+## Step 8: Save Results
 
 ```python
 from schemas.sqlite_storage import SqliteStorage
@@ -244,7 +282,7 @@ result = storage.save_instagram_scrape(
 )
 ```
 
-## Step 8: Report Final Summary
+## Step 9: Report Final Summary
 
 **REQUIRED:** Display a complete summary showing ALL posts were processed.
 
