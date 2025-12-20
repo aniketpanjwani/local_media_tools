@@ -1,8 +1,12 @@
 # Local Media Tools
 
+![Research output showing scraped events](assets/research-output.png)
+
 A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources. Get structured JSON data for your own workflows.
 
 **Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
+
+> 💡 **Non-technical?** [Book a consultation](https://tidycal.com/aniketpanjwani/local-media-tools-consultation) for guided setup. You'll leave ready to scrape events from any Instagram profile or webpage yourself.
 
 ## About
 
