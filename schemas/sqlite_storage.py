@@ -23,11 +23,12 @@ from schemas.event import (
     EventSource,
     InstagramPost,
     InstagramProfile,
+    PostImage,
     Venue,
 )
 
 
-CURRENT_SCHEMA_VERSION = "2.0.0"
+CURRENT_SCHEMA_VERSION = "2.1.0"
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -67,10 +68,14 @@ CREATE TABLE IF NOT EXISTS posts (
     caption TEXT,
     media_type TEXT CHECK(media_type IN ('photo', 'video', 'carousel', 'reel')),
     display_url TEXT,
+    image_count INTEGER DEFAULT 1,
     like_count INTEGER DEFAULT 0,
     comment_count INTEGER DEFAULT 0,
     posted_at TEXT NOT NULL,
     scraped_at TEXT NOT NULL,
+    classification TEXT CHECK(classification IN ('event', 'not_event', 'ambiguous')),
+    classification_reason TEXT,
+    needs_image_analysis INTEGER DEFAULT 1 CHECK(needs_image_analysis IN (0, 1)),
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
@@ -80,6 +85,22 @@ CREATE INDEX IF NOT EXISTS idx_posts_profile_id ON posts(profile_id);
 CREATE INDEX IF NOT EXISTS idx_posts_instagram_post_id ON posts(instagram_post_id);
 CREATE INDEX IF NOT EXISTS idx_posts_posted_at ON posts(posted_at);
 CREATE INDEX IF NOT EXISTS idx_posts_shortcode ON posts(shortcode);
+
+-- Post images table (for carousel images)
+CREATE TABLE IF NOT EXISTS post_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    image_index INTEGER NOT NULL DEFAULT 0,
+    file_path TEXT,
+    downloaded_at TEXT,
+    analyzed_at TEXT,
+    is_event_flyer INTEGER DEFAULT 0 CHECK(is_event_flyer IN (0, 1)),
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    UNIQUE(post_id, image_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_images_post_id ON post_images(post_id);
 
 -- Venues table (normalized)
 CREATE TABLE IF NOT EXISTS venues (
@@ -218,10 +239,15 @@ class SqliteStorage:
         """Run schema migrations."""
         if from_version == "1.0.0":
             self._migrate_1_0_0_to_2_0_0(conn)
-            conn.execute(
-                "UPDATE schema_metadata SET value = ? WHERE key = 'version'",
-                (CURRENT_SCHEMA_VERSION,),
-            )
+            from_version = "2.0.0"
+
+        if from_version == "2.0.0":
+            self._migrate_2_0_0_to_2_1_0(conn)
+
+        conn.execute(
+            "UPDATE schema_metadata SET value = ? WHERE key = 'version'",
+            (CURRENT_SCHEMA_VERSION,),
+        )
 
     def _migrate_1_0_0_to_2_0_0(self, conn: sqlite3.Connection) -> None:
         """Migrate from 1.0.0 to 2.0.0: Add profiles, posts tables, and post_id FK."""
@@ -275,6 +301,37 @@ class SqliteStorage:
         # Add post_id column to events table
         conn.execute("ALTER TABLE events ADD COLUMN post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_events_post_id ON events(post_id)")
+
+    def _migrate_2_0_0_to_2_1_0(self, conn: sqlite3.Connection) -> None:
+        """Migrate from 2.0.0 to 2.1.0: Add post_images table and classification fields."""
+        # Add new columns to posts table
+        conn.execute("ALTER TABLE posts ADD COLUMN image_count INTEGER DEFAULT 1")
+        conn.execute("ALTER TABLE posts ADD COLUMN classification TEXT CHECK(classification IN ('event', 'not_event', 'ambiguous'))")
+        conn.execute("ALTER TABLE posts ADD COLUMN classification_reason TEXT")
+        conn.execute("ALTER TABLE posts ADD COLUMN needs_image_analysis INTEGER DEFAULT 1 CHECK(needs_image_analysis IN (0, 1))")
+
+        # Create post_images table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS post_images (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                image_url TEXT NOT NULL,
+                image_index INTEGER NOT NULL DEFAULT 0,
+                file_path TEXT,
+                downloaded_at TEXT,
+                analyzed_at TEXT,
+                is_event_flyer INTEGER DEFAULT 0 CHECK(is_event_flyer IN (0, 1)),
+                FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+                UNIQUE(post_id, image_index)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_post_images_post_id ON post_images(post_id)")
+
+        # Migrate existing display_url to post_images for existing posts
+        conn.execute("""
+            INSERT INTO post_images (post_id, image_url, image_index)
+            SELECT id, display_url, 0 FROM posts WHERE display_url IS NOT NULL
+        """)
 
     def _find_or_create_profile(
         self, conn: sqlite3.Connection, profile: InstagramProfile
@@ -377,8 +434,12 @@ class SqliteStorage:
                 caption = ?,
                 media_type = ?,
                 display_url = COALESCE(?, display_url),
+                image_count = ?,
                 like_count = ?,
                 comment_count = ?,
+                classification = COALESCE(?, classification),
+                classification_reason = COALESCE(?, classification_reason),
+                needs_image_analysis = ?,
                 scraped_at = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
@@ -389,11 +450,17 @@ class SqliteStorage:
                 post.caption,
                 post.media_type,
                 post.display_url,
+                post.image_count,
                 post.like_count,
                 post.comment_count,
+                post.classification,
+                post.classification_reason,
+                1 if post.needs_image_analysis else 0,
                 post_id,
             ),
         )
+        # Update post_images for this post
+        self._save_post_images(conn, post_id, post.image_urls)
 
     def _insert_post(
         self, conn: sqlite3.Connection, post: InstagramPost, profile_id: int
@@ -403,9 +470,10 @@ class SqliteStorage:
             """
             INSERT INTO posts (
                 profile_id, instagram_post_id, shortcode, post_url, caption,
-                media_type, display_url, like_count, comment_count,
+                media_type, display_url, image_count, like_count, comment_count,
+                classification, classification_reason, needs_image_analysis,
                 posted_at, scraped_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
             (
                 profile_id,
@@ -415,12 +483,37 @@ class SqliteStorage:
                 post.caption,
                 post.media_type,
                 post.display_url,
+                post.image_count,
                 post.like_count,
                 post.comment_count,
+                post.classification,
+                post.classification_reason,
+                1 if post.needs_image_analysis else 0,
                 post.posted_at.isoformat(),
             ),
         )
-        return cursor.lastrowid  # type: ignore[return-value]
+        post_id = cursor.lastrowid
+        # Save post_images for this post
+        self._save_post_images(conn, post_id, post.image_urls)  # type: ignore[arg-type]
+        return post_id  # type: ignore[return-value]
+
+    def _save_post_images(
+        self, conn: sqlite3.Connection, post_id: int, image_urls: list[str]
+    ) -> None:
+        """Save or update post images for a post."""
+        # Delete existing images for this post (to handle updates)
+        conn.execute("DELETE FROM post_images WHERE post_id = ?", (post_id,))
+
+        # Insert new images
+        for index, url in enumerate(image_urls):
+            if url:
+                conn.execute(
+                    """
+                    INSERT INTO post_images (post_id, image_url, image_index)
+                    VALUES (?, ?, ?)
+                    """,
+                    (post_id, url, index),
+                )
 
     def save_instagram_scrape(
         self,

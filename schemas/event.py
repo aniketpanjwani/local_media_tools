@@ -65,9 +65,22 @@ class InstagramPost(BaseModel):
     caption: str | None = None
     media_type: Literal["photo", "video", "carousel", "reel"] = "photo"
     display_url: str | None = None
+    image_urls: list[str] = Field(default_factory=list, description="All images (carousel or single)")
+    image_count: int = Field(default=1, description="Number of images in post")
     like_count: int = 0
     comment_count: int = 0
     posted_at: datetime
+
+    # Classification fields (set during workflow processing)
+    classification: Literal["event", "not_event", "ambiguous"] | None = Field(
+        default=None, description="Post classification result"
+    )
+    classification_reason: str | None = Field(
+        default=None, description="Why the post was classified this way"
+    )
+    needs_image_analysis: bool = Field(
+        default=True, description="Whether image analysis is needed for this post"
+    )
 
     @classmethod
     def from_api_response(cls, node: dict[str, Any], scraped_at: datetime | None = None) -> "InstagramPost":
@@ -86,6 +99,23 @@ class InstagramPost(BaseModel):
         }
         media_type = media_type_map.get(typename, "photo")
 
+        # Extract all carousel images (or single image for non-carousel posts)
+        image_urls: list[str] = []
+        if typename == "GraphSidecar":
+            # Carousel post - extract all images from edge_sidecar_to_children
+            children = node.get("edge_sidecar_to_children", {}).get("edges", [])
+            for child in children:
+                child_node = child.get("node", {})
+                if child_url := child_node.get("display_url"):
+                    image_urls.append(child_url)
+        else:
+            # Single image/video post
+            if display_url := node.get("display_url"):
+                image_urls.append(display_url)
+
+        # Determine if image analysis is needed (videos/reels have no static images)
+        needs_image_analysis = media_type not in ("video", "reel")
+
         # Convert Unix timestamp to datetime
         posted_at = datetime.fromtimestamp(node.get("taken_at_timestamp", 0))
 
@@ -96,9 +126,12 @@ class InstagramPost(BaseModel):
             caption=caption,
             media_type=media_type,
             display_url=node.get("display_url"),
+            image_urls=image_urls,
+            image_count=len(image_urls) if image_urls else 1,
             like_count=node.get("edge_liked_by", {}).get("count", 0),
             comment_count=node.get("edge_media_to_comment", {}).get("count", 0),
             posted_at=posted_at,
+            needs_image_analysis=needs_image_analysis,
         )
 
 
@@ -224,3 +257,15 @@ class EventCollection(BaseModel):
                 by_day[day] = []
             by_day[day].append(event)
         return by_day
+
+
+class PostImage(BaseModel):
+    """Individual image from an Instagram post (for carousel storage)."""
+
+    post_id: int = Field(..., description="FK to posts table")
+    image_url: str = Field(..., description="URL of the image")
+    image_index: int = Field(default=0, description="Position in carousel (0-indexed)")
+    file_path: str | None = Field(default=None, description="Local file path after download")
+    downloaded_at: datetime | None = Field(default=None, description="When image was downloaded")
+    analyzed_at: datetime | None = Field(default=None, description="When image was analyzed by vision")
+    is_event_flyer: bool = Field(default=False, description="Whether this image contains event details")

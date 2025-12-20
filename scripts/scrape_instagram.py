@@ -164,6 +164,108 @@ def download_image(url: str, output_dir: Path, filename: str) -> Path | None:
         return None
 
 
+def get_image_storage_path(
+    handle: str,
+    post_id: str,
+    index: int,
+    posted_at: Any | None = None,
+) -> Path:
+    """
+    Generate storage path for an Instagram image.
+
+    Directory structure:
+    ~/.config/local-media-tools/data/images/instagram/{handle}/{date}_{post_id}_{index}.jpg
+
+    Args:
+        handle: Instagram handle (with or without @)
+        post_id: Instagram post ID
+        index: Image index within the post (0-indexed)
+        posted_at: Optional datetime when posted (for date prefix)
+
+    Returns:
+        Path to where the image should be stored
+    """
+    import re
+    from datetime import datetime
+
+    # Sanitize handle
+    safe_handle = re.sub(r"[^\w\-]", "_", handle.lower().lstrip("@"))
+
+    # Format date prefix if available
+    date_prefix = ""
+    if posted_at:
+        if isinstance(posted_at, datetime):
+            date_prefix = posted_at.strftime("%Y-%m-%d") + "_"
+        elif hasattr(posted_at, "isoformat"):
+            date_prefix = str(posted_at)[:10] + "_"
+
+    # Truncate post_id if too long
+    safe_post_id = post_id[:50]
+
+    base_dir = (
+        Path.home()
+        / ".config"
+        / "local-media-tools"
+        / "data"
+        / "images"
+        / "instagram"
+    )
+    return base_dir / safe_handle / f"{date_prefix}{safe_post_id}_{index}.jpg"
+
+
+def download_post_images(
+    post: Any,  # InstagramPost - using Any to avoid circular import
+    handle: str,
+) -> list[tuple[int, Path | None]]:
+    """
+    Download all images for an Instagram post.
+
+    Args:
+        post: InstagramPost object with image_urls list
+        handle: Instagram handle of the account
+
+    Returns:
+        List of (index, path) tuples. Path is None if download failed.
+    """
+    results: list[tuple[int, Path | None]] = []
+
+    # Skip videos/reels - no static images to download
+    if post.media_type in ("video", "reel"):
+        logger.info(
+            "skipping_video_download",
+            post_id=post.instagram_post_id,
+            media_type=post.media_type,
+        )
+        return results
+
+    for index, url in enumerate(post.image_urls):
+        if not url:
+            results.append((index, None))
+            continue
+
+        path = get_image_storage_path(
+            handle=handle,
+            post_id=post.instagram_post_id,
+            index=index,
+            posted_at=post.posted_at,
+        )
+
+        try:
+            downloaded = download_image(url, path.parent, path.name)
+            results.append((index, downloaded))
+        except Exception as e:
+            logger.error(
+                "image_download_failed",
+                url=url,
+                post_id=post.instagram_post_id,
+                index=index,
+                error=str(e),
+            )
+            results.append((index, None))
+
+    return results
+
+
 if __name__ == "__main__":
     # Simple test
     import json

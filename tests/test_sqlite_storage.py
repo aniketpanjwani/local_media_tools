@@ -63,7 +63,7 @@ class TestSqliteStorageInit:
                 "SELECT value FROM schema_metadata WHERE key = 'version'"
             ).fetchone()
             assert result is not None
-            assert result[0] == "2.0.0"
+            assert result[0] == "2.1.0"
 
 
 class TestSaveAndLoad:
