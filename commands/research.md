@@ -16,14 +16,22 @@ Scraped data is saved to `~/.config/local-media-tools/data/events.db`.
 
 **NEVER use Firecrawl, Chrome MCP, curl, or raw API calls for Instagram.**
 
-Instagram scraping MUST use the CLI tool:
+### Step 1: Find the plugin directory
+
+First, locate the newsletter-events plugin installation:
 
 ```bash
-# Scrape all configured Instagram accounts
-uv run python scripts/cli_instagram.py scrape --all
+PLUGIN_DIR=$(grep -l "newsletter-events" ~/.claude/plugins/cache/*/*/pyproject.toml 2>/dev/null | head -1 | xargs dirname)
+echo "Plugin directory: $PLUGIN_DIR"
+```
+
+### Step 2: Run the CLI from the plugin directory
+
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py scrape --all
 
 # Check results
-uv run python scripts/cli_instagram.py show-stats
+cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py show-stats
 ```
 
 The CLI tool handles:
@@ -34,10 +42,11 @@ The CLI tool handles:
 ## Instructions
 
 1. Read config from `~/.config/local-media-tools/sources.yaml`
-2. **Instagram:** Run `uv run python scripts/cli_instagram.py scrape --all`
-3. **Facebook:** Use Chrome MCP with facebook-event-scraper (Node.js subprocess)
-4. Classify posts and extract events from scraped data
-5. Report summary with `uv run python scripts/cli_instagram.py show-stats`
+2. Find the plugin directory using Step 1 above
+3. **Instagram:** Run `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py scrape --all`
+4. **Facebook:** Use Chrome MCP with facebook-event-scraper (Node.js subprocess)
+5. Classify posts and extract events from scraped data
+6. Report summary with `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py show-stats`
 
 ## Expected Output
 
