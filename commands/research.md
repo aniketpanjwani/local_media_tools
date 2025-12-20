@@ -18,10 +18,12 @@ Scraped data is saved to `~/.config/local-media-tools/data/events.db`.
 
 ### Step 1: Get the plugin directory
 
+Run this command to get the plugin path:
 ```bash
-PLUGIN_DIR=$(cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath')
-echo "Plugin directory: $PLUGIN_DIR"
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
 ```
+
+Save the output path and use it as `PLUGIN_DIR` in subsequent commands.
 
 ### Step 2: Run the CLI from the plugin directory
 
@@ -39,7 +41,7 @@ The CLI tool handles:
 
 ## Instructions
 
-1. Get plugin directory: `PLUGIN_DIR=$(cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath')`
+1. Get plugin directory by running: `cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'` and save output as PLUGIN_DIR
 2. Read config from `~/.config/local-media-tools/sources.yaml`
 3. **Instagram:** Run `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py scrape --all`
 4. **Facebook:** Use Chrome MCP with facebook-event-scraper (Node.js subprocess)
