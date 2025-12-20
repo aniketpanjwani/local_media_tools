@@ -2,7 +2,7 @@
 
 ![Research output showing scraped events](assets/research-output.png)
 
-A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources.
+A Claude Code plugin for scraping local events from **dozens** of Instagram, Facebook, and web sources and generating an events section of a local media publication in **minutes**.
 
 **Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
 
