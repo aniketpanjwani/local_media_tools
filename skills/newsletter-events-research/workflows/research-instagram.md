@@ -1,5 +1,29 @@
 # Workflow: Research Instagram
 
+<critical>
+## Use CLI Tool - Never curl
+
+**ALWAYS use the CLI tool to scrape Instagram.** Never use curl or raw API calls.
+
+```bash
+# Scrape all configured accounts
+uv run python scripts/cli_instagram.py scrape --all
+
+# Scrape specific account
+uv run python scripts/cli_instagram.py scrape --handle wayside_cider
+
+# Check what's in the database
+uv run python scripts/cli_instagram.py list-posts --handle wayside_cider
+uv run python scripts/cli_instagram.py show-stats
+```
+
+The CLI ensures:
+- Correct API parameters (`handle`, not `username`)
+- Rate limiting (2 calls/second)
+- Automatic retry on 429/5xx errors
+- Proper database storage with FK relationships
+</critical>
+
 <required_reading>
 Read before proceeding:
 - `references/scrapecreators-api.md`
@@ -19,115 +43,60 @@ Read before proceeding:
 </critical>
 
 <process>
-## Step 1: Load Configuration
+## Step 1: Scrape Posts Using CLI
 
-```python
-from config.config_schema import AppConfig
-from pathlib import Path
+**Run the CLI tool to scrape all configured Instagram accounts:**
 
-config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
-config = AppConfig.from_yaml(config_path)
-accounts = config.sources.instagram.accounts
+```bash
+uv run python scripts/cli_instagram.py scrape --all
 ```
 
-## Step 2: Scrape Posts from Each Account
+This will:
+- Fetch posts from all accounts in `~/.config/local-media-tools/sources.yaml`
+- Save posts to the SQLite database
+- Save raw API responses to `~/.config/local-media-tools/data/raw/`
+- Show you a summary of fetched vs new posts
 
-**IMPORTANT:** You MUST track the exact count of posts received from EACH account.
+Example output:
+```
+Scraping 5 Instagram account(s)...
 
-For each Instagram account in the config:
+  @wayside_cider... 12 posts (12 new)
+  @basilicahudson... 12 posts (0 new)
 
-```python
-from scripts.scrape_instagram import ScrapeCreatorsClient
-from schemas.event import InstagramProfile, InstagramPost
+==================================================
+SUMMARY: 24 posts fetched, 12 new
+==================================================
 
-client = ScrapeCreatorsClient()
-all_posts_by_account: dict[str, list[InstagramPost]] = {}
-
-for account in accounts:
-    result = client.get_instagram_user_posts(account.handle, limit=20)
-
-    # Extract profile info from first post's owner data
-    if result.get("posts"):
-        first_post = result["posts"][0]["node"]
-        owner = first_post.get("owner", {})
-        profile = InstagramProfile(
-            instagram_id=owner.get("id", ""),
-            handle=owner.get("username", account.handle),
-        )
-
-    # Create InstagramPost objects from API response
-    posts = []
-    for post_data in result.get("posts", []):
-        node = post_data.get("node", {})
-        post = InstagramPost.from_api_response(node)
-        posts.append(post)
-
-    all_posts_by_account[account.handle] = posts
-    print(f"Received {len(posts)} posts from @{account.handle}")
-
-    # Save raw data
-    data_dir = Path.home() / ".config" / "local-media-tools" / "data"
-    (data_dir / "raw").mkdir(parents=True, exist_ok=True)
+Account                      Fetched        New      In DB
+-------------------------------------------------------
+@wayside_cider                    12         12          0
+@basilicahudson                   12          0         12
+-------------------------------------------------------
+TOTAL                             24         12         12
 ```
 
-**After scraping ALL accounts, display a summary table:**
+## Step 2: Check Which Posts Need Classification
 
-| Account | Posts Fetched |
-|---------|---------------|
-| @handle1 | 12 |
-| @handle2 | 15 |
-| **Total** | **27** |
+**List unclassified posts for each account:**
 
-## Step 2b: Filter Out Already-Analyzed Posts
-
-**Skip posts that have already been classified** to avoid wasting analysis effort on posts we've seen before.
-
-```python
-from schemas.sqlite_storage import SqliteStorage
-from datetime import datetime
-
-db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
-storage = SqliteStorage(db_path)
-
-posts_to_analyze: dict[str, list[InstagramPost]] = {}
-skipped_posts: dict[str, list[InstagramPost]] = {}
-
-for handle, posts in all_posts_by_account.items():
-    # Get existing posts with their classifications
-    existing_posts = storage.get_posts_for_profile(handle, only_classified=True)
-
-    new_posts = []
-    already_analyzed = []
-
-    for post in posts:
-        if post.instagram_post_id in existing_posts:
-            # Post already analyzed - carry forward its classification
-            existing = existing_posts[post.instagram_post_id]
-            post.classification = existing["classification"]
-            post.classification_reason = f"[Previously classified] {existing['classification_reason'] or ''}"
-            post.needs_image_analysis = False  # Don't re-analyze
-            already_analyzed.append(post)
-        else:
-            # New post - needs analysis
-            new_posts.append(post)
-
-    posts_to_analyze[handle] = new_posts
-    skipped_posts[handle] = already_analyzed
+```bash
+uv run python scripts/cli_instagram.py list-posts --handle wayside_cider
 ```
 
-**After filtering, display a summary table:**
+This shows all posts with their classification status. Focus on "unclassified" posts.
 
-| Account | Total Fetched | Already Analyzed | New to Analyze |
-|---------|--------------|------------------|----------------|
-| @handle1 | 12 | 10 | 2 |
-| @handle2 | 15 | 12 | 3 |
-| **Total** | **27** | **22** | **5** |
+**To see all classified posts only:**
 
-**If all posts are already analyzed for an account, skip to the next account.**
+```bash
+uv run python scripts/cli_instagram.py list-posts --handle wayside_cider --classified-only
+```
+
+**Skip accounts where all posts are already classified.**
 
 ## Step 3: Classify NEW Posts Only (Caption-First)
 
-**You MUST process every NEW post from Step 2b.** Already-classified posts from `skipped_posts` keep their existing classification.
+**You MUST process every unclassified post from Step 2.** Already-classified posts keep their existing classification.
 
 Maintain a counter and announce progress: "Classifying post {i}/{total} (new posts only)..."
 
@@ -320,8 +289,10 @@ result = storage.save_instagram_scrape(
 
 <success_criteria>
 Instagram research complete when:
-- [ ] All configured accounts scraped
-- [ ] Already-analyzed posts identified and skipped (Step 2b)
+- [ ] CLI tool used to scrape accounts (NOT curl!)
+- [ ] All configured accounts scraped via `uv run python scripts/cli_instagram.py scrape --all`
+- [ ] Raw data saved to `~/.config/local-media-tools/data/raw/`
+- [ ] Unclassified posts identified via `list-posts` command
 - [ ] New posts classified as event, not_event, or ambiguous
 - [ ] Videos/reels skipped for image analysis (no static images)
 - [ ] Caption-first classification reduced unnecessary image analysis
@@ -329,5 +300,4 @@ Instagram research complete when:
 - [ ] All events from multi-event posts extracted separately
 - [ ] Only actual events saved to database (not all posts!)
 - [ ] Final summary shows new vs skipped breakdown
-- [ ] Raw data saved to `~/.config/local-media-tools/data/raw/`
 </success_criteria>
