@@ -21,6 +21,9 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 - **newsletter-events-setup** - Environment setup and verification
 - **newsletter-events-research** - Scrape events from configured sources
 - **newsletter-events-write** - Generate newsletter markdown from stored events
+- **newsletter-events-add-source** - Add sources to configuration
+- **newsletter-events-list-sources** - List all configured sources
+- **newsletter-events-remove-source** - Remove sources from configuration
 
 ## Commands
 
@@ -28,6 +31,9 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 - `/newsletter-events:setup-location` - Configure Facebook location-based discovery
 - `/newsletter-events:research` - Scrape all configured sources
 - `/newsletter-events:write` - Generate newsletter from stored events
+- `/newsletter-events:add-source` - Add Instagram, Facebook, or web sources
+- `/newsletter-events:list-sources` - View all configured sources
+- `/newsletter-events:remove-source` - Remove sources from configuration
 
 ## Architecture
 
