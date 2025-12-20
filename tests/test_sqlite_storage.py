@@ -534,3 +534,169 @@ class TestUtilityMethods:
 
         storage.save(EventCollection(events=[sample_event]))
         assert storage.count_venues() == 1
+
+
+class TestProfileAndPostQueries:
+    """Tests for profile and post query methods used for deduplication."""
+
+    @pytest.fixture
+    def sample_profile(self):
+        """Sample Instagram profile."""
+        from schemas.event import InstagramProfile
+
+        return InstagramProfile(
+            instagram_id="123456789",
+            handle="testvenue",
+            full_name="Test Venue",
+            bio="A test venue bio",
+            followers_count=1000,
+            post_count=50,
+        )
+
+    @pytest.fixture
+    def sample_posts(self):
+        """Sample Instagram posts with classifications."""
+        from datetime import datetime
+
+        from schemas.event import InstagramPost
+
+        return [
+            InstagramPost(
+                instagram_post_id="post_001",
+                shortcode="ABC123",
+                post_url="https://instagram.com/p/ABC123",
+                caption="Jazz night this Friday!",
+                media_type="photo",
+                posted_at=datetime(2025, 1, 15, 12, 0),
+                classification="event",
+                classification_reason="Has future date",
+                needs_image_analysis=False,
+            ),
+            InstagramPost(
+                instagram_post_id="post_002",
+                shortcode="DEF456",
+                post_url="https://instagram.com/p/DEF456",
+                caption="Thanks for coming last night!",
+                media_type="photo",
+                posted_at=datetime(2025, 1, 14, 12, 0),
+                classification="not_event",
+                classification_reason="Past event recap",
+                needs_image_analysis=False,
+            ),
+            InstagramPost(
+                instagram_post_id="post_003",
+                shortcode="GHI789",
+                post_url="https://instagram.com/p/GHI789",
+                caption="",  # No caption - needs image analysis
+                media_type="carousel",
+                posted_at=datetime(2025, 1, 13, 12, 0),
+                classification=None,  # Not yet classified
+                classification_reason=None,
+                needs_image_analysis=True,
+            ),
+        ]
+
+    def test_get_profile_by_handle_returns_profile(
+        self, temp_db: Path, sample_profile, sample_posts
+    ) -> None:
+        """get_profile_by_handle returns profile data when it exists."""
+        storage = SqliteStorage(temp_db)
+
+        # Save profile and posts
+        storage.save_instagram_scrape(
+            profile=sample_profile,
+            posts=sample_posts[:2],  # Only classified posts
+            events_by_post={},
+        )
+
+        result = storage.get_profile_by_handle("testvenue")
+        assert result is not None
+        assert result["handle"] == "testvenue"
+        assert result["instagram_id"] == "123456789"
+        assert result["full_name"] == "Test Venue"
+
+    def test_get_profile_by_handle_strips_at_symbol(
+        self, temp_db: Path, sample_profile, sample_posts
+    ) -> None:
+        """get_profile_by_handle works with @ prefix."""
+        storage = SqliteStorage(temp_db)
+        storage.save_instagram_scrape(
+            profile=sample_profile,
+            posts=sample_posts[:1],
+            events_by_post={},
+        )
+
+        result = storage.get_profile_by_handle("@testvenue")
+        assert result is not None
+        assert result["handle"] == "testvenue"
+
+    def test_get_profile_by_handle_returns_none_when_not_found(
+        self, temp_db: Path
+    ) -> None:
+        """get_profile_by_handle returns None for unknown handle."""
+        storage = SqliteStorage(temp_db)
+        result = storage.get_profile_by_handle("nonexistent")
+        assert result is None
+
+    def test_get_posts_for_profile_returns_all_posts(
+        self, temp_db: Path, sample_profile, sample_posts
+    ) -> None:
+        """get_posts_for_profile returns all posts for profile."""
+        storage = SqliteStorage(temp_db)
+        storage.save_instagram_scrape(
+            profile=sample_profile,
+            posts=sample_posts,
+            events_by_post={},
+        )
+
+        result = storage.get_posts_for_profile("testvenue")
+        assert len(result) == 3
+        assert "post_001" in result
+        assert "post_002" in result
+        assert "post_003" in result
+
+    def test_get_posts_for_profile_only_classified(
+        self, temp_db: Path, sample_profile, sample_posts
+    ) -> None:
+        """get_posts_for_profile with only_classified=True filters unclassified posts."""
+        storage = SqliteStorage(temp_db)
+        storage.save_instagram_scrape(
+            profile=sample_profile,
+            posts=sample_posts,
+            events_by_post={},
+        )
+
+        result = storage.get_posts_for_profile("testvenue", only_classified=True)
+        assert len(result) == 2  # Only post_001 and post_002 have classification
+        assert "post_001" in result
+        assert "post_002" in result
+        assert "post_003" not in result  # classification is None
+
+    def test_get_posts_for_profile_contains_classification_data(
+        self, temp_db: Path, sample_profile, sample_posts
+    ) -> None:
+        """get_posts_for_profile returns classification fields."""
+        storage = SqliteStorage(temp_db)
+        storage.save_instagram_scrape(
+            profile=sample_profile,
+            posts=sample_posts,
+            events_by_post={},
+        )
+
+        result = storage.get_posts_for_profile("testvenue", only_classified=True)
+
+        post_001 = result["post_001"]
+        assert post_001["classification"] == "event"
+        assert post_001["classification_reason"] == "Has future date"
+
+        post_002 = result["post_002"]
+        assert post_002["classification"] == "not_event"
+        assert post_002["classification_reason"] == "Past event recap"
+
+    def test_get_posts_for_profile_empty_for_unknown_handle(
+        self, temp_db: Path
+    ) -> None:
+        """get_posts_for_profile returns empty dict for unknown handle."""
+        storage = SqliteStorage(temp_db)
+        result = storage.get_posts_for_profile("nonexistent")
+        assert result == {}

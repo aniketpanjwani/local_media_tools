@@ -78,11 +78,58 @@ for account in accounts:
 | @handle2 | 15 |
 | **Total** | **27** |
 
-## Step 3: Classify EVERY Post (Caption-First)
+## Step 2b: Filter Out Already-Analyzed Posts
 
-**You MUST process EVERY SINGLE POST. Do not stop early. Do not summarize.**
+**Skip posts that have already been classified** to avoid wasting analysis effort on posts we've seen before.
 
-Maintain a counter and announce progress: "Classifying post {i}/{total}..."
+```python
+from schemas.sqlite_storage import SqliteStorage
+from datetime import datetime
+
+db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
+storage = SqliteStorage(db_path)
+
+posts_to_analyze: dict[str, list[InstagramPost]] = {}
+skipped_posts: dict[str, list[InstagramPost]] = {}
+
+for handle, posts in all_posts_by_account.items():
+    # Get existing posts with their classifications
+    existing_posts = storage.get_posts_for_profile(handle, only_classified=True)
+
+    new_posts = []
+    already_analyzed = []
+
+    for post in posts:
+        if post.instagram_post_id in existing_posts:
+            # Post already analyzed - carry forward its classification
+            existing = existing_posts[post.instagram_post_id]
+            post.classification = existing["classification"]
+            post.classification_reason = f"[Previously classified] {existing['classification_reason'] or ''}"
+            post.needs_image_analysis = False  # Don't re-analyze
+            already_analyzed.append(post)
+        else:
+            # New post - needs analysis
+            new_posts.append(post)
+
+    posts_to_analyze[handle] = new_posts
+    skipped_posts[handle] = already_analyzed
+```
+
+**After filtering, display a summary table:**
+
+| Account | Total Fetched | Already Analyzed | New to Analyze |
+|---------|--------------|------------------|----------------|
+| @handle1 | 12 | 10 | 2 |
+| @handle2 | 15 | 12 | 3 |
+| **Total** | **27** | **22** | **5** |
+
+**If all posts are already analyzed for an account, skip to the next account.**
+
+## Step 3: Classify NEW Posts Only (Caption-First)
+
+**You MUST process every NEW post from Step 2b.** Already-classified posts from `skipped_posts` keep their existing classification.
+
+Maintain a counter and announce progress: "Classifying post {i}/{total} (new posts only)..."
 
 ### Step 3a: Check Media Type First
 
@@ -121,16 +168,16 @@ For each post, record:
 - `classification_reason`: Brief explanation (e.g., "past event recap", "has future date Dec 20")
 - `needs_image_analysis`: true | false
 
-**After classifying ALL posts, display a summary table:**
+**After classifying all NEW posts, display a summary table:**
 
-| Classification | Count | Needs Image Analysis |
-|---------------|-------|----------------------|
-| CLEARLY_EVENT | 8 | Yes (8) |
-| CLEARLY_NOT_EVENT | 52 | No |
-| AMBIGUOUS | 12 | Yes (12) |
-| **Total** | **72** | **20** |
+| Classification | New Posts | Skipped (Already Analyzed) |
+|---------------|-----------|---------------------------|
+| CLEARLY_EVENT | 2 | 6 |
+| CLEARLY_NOT_EVENT | 2 | 46 |
+| AMBIGUOUS | 1 | 5 |
+| **Total** | **5** | **57** |
 
-**Verify:** Total in table MUST equal total posts fetched in Step 2.
+**Verify:** New Posts total MUST equal "New to Analyze" from Step 2b.
 
 ## Step 4: Download and Analyze Images (Conditional)
 
@@ -257,28 +304,30 @@ result = storage.save_instagram_scrape(
 ### Overall Summary Table:
 | Metric | Count |
 |--------|-------|
-| Total posts scraped | 72 |
-| Posts classified as events | 12 |
-| Posts classified as not events | 52 |
-| Posts classified as ambiguous | 8 |
-| Image analyses performed | 20 |
-| Image analyses skipped | 52 |
-| Total events extracted | 15 |
-| Events needing review | 2 |
+| Total posts from API | 72 |
+| Already analyzed (skipped) | 57 |
+| **New posts analyzed** | **15** |
+| New posts → events | 3 |
+| New posts → not events | 10 |
+| New posts → ambiguous | 2 |
+| Image analyses performed | 5 |
+| Total events extracted (new) | 4 |
+| Events from skipped posts (re-used) | 11 |
+| Events needing review | 1 |
 
-**Verify:** "Total posts scraped" MUST match the sum from Step 2.
+**Verify:** "New posts analyzed" MUST equal "New to Analyze" from Step 2b.
 </process>
 
 <success_criteria>
 Instagram research complete when:
 - [ ] All configured accounts scraped
-- [ ] Post count from API matches posts processed (verify with summary table)
-- [ ] Each post classified as event, not_event, or ambiguous
+- [ ] Already-analyzed posts identified and skipped (Step 2b)
+- [ ] New posts classified as event, not_event, or ambiguous
 - [ ] Videos/reels skipped for image analysis (no static images)
 - [ ] Caption-first classification reduced unnecessary image analysis
 - [ ] All carousel images considered (not just first image)
 - [ ] All events from multi-event posts extracted separately
 - [ ] Only actual events saved to database (not all posts!)
-- [ ] Final summary shows complete breakdown with matching totals
+- [ ] Final summary shows new vs skipped breakdown
 - [ ] Raw data saved to `~/.config/local-media-tools/data/raw/`
 </success_criteria>

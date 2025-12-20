@@ -844,3 +844,55 @@ class SqliteStorage:
         with self._connection() as conn:
             result = conn.execute("SELECT COUNT(*) FROM venues").fetchone()
             return result[0] if result else 0
+
+    def get_profile_by_handle(self, handle: str) -> dict | None:
+        """
+        Get profile data by Instagram handle.
+
+        Returns dict with profile fields including last_scraped_at,
+        or None if profile not found.
+        """
+        with self._connection() as conn:
+            row = conn.execute(
+                """
+                SELECT id, instagram_id, handle, full_name, bio,
+                       followers_count, following_count, post_count,
+                       profile_pic_url, is_verified, external_url,
+                       last_scraped_at, created_at, updated_at
+                FROM profiles
+                WHERE handle = ?
+                """,
+                (handle.lstrip("@"),),
+            ).fetchone()
+
+            if row:
+                return dict(row)
+            return None
+
+    def get_posts_for_profile(
+        self, handle: str, only_classified: bool = False
+    ) -> dict[str, dict]:
+        """
+        Get all posts for a profile, indexed by instagram_post_id.
+
+        Args:
+            handle: Instagram handle (with or without @)
+            only_classified: If True, only return posts with classification set
+
+        Returns:
+            Dict mapping instagram_post_id -> post data dict
+        """
+        with self._connection() as conn:
+            query = """
+                SELECT p.instagram_post_id, p.classification, p.classification_reason,
+                       p.needs_image_analysis, p.posted_at, p.scraped_at
+                FROM posts p
+                JOIN profiles pr ON p.profile_id = pr.id
+                WHERE pr.handle = ?
+            """
+            if only_classified:
+                query += " AND p.classification IS NOT NULL"
+
+            rows = conn.execute(query, (handle.lstrip("@"),)).fetchall()
+
+            return {row["instagram_post_id"]: dict(row) for row in rows}
