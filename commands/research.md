@@ -43,8 +43,21 @@ The CLI tool handles:
 2. Read config from `~/.config/local-media-tools/sources.yaml`
 3. **Instagram:** Run `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py scrape --all`
 4. **Facebook:** Use Chrome MCP with facebook-event-scraper (Node.js subprocess)
-5. Classify posts and extract events from scraped data
+5. **Classify posts:** Read and follow `$PLUGIN_DIR/skills/newsletter-events-research/workflows/research-instagram.md` Steps 3-7 to classify posts and extract events
 6. Report summary with `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py show-stats`
+
+## Classification (Step 5 Details)
+
+After scraping, you MUST classify each unclassified post:
+
+1. **List unclassified posts:** `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py list-posts --handle <handle>`
+2. **For each unclassified post, analyze the caption:**
+   - **CLEARLY_NOT_EVENT:** Thank you posts, past recaps, food photos, memes → skip
+   - **CLEARLY_EVENT:** Has future date, time, venue, event keywords → extract event
+   - **AMBIGUOUS:** Need to check images for details
+3. **For posts needing image analysis:** Download and analyze flyer images for event details
+4. **Extract events:** Create Event objects with title, date, time, venue, price
+5. **Save to database:** Update post classification and save extracted events
 
 ## Expected Output
 
