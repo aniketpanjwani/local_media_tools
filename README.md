@@ -2,7 +2,7 @@
 
 ![Research output showing scraped events](assets/research-output.png)
 
-A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources. Get structured JSON data for your own workflows.
+A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources.
 
 **Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
 
@@ -10,7 +10,7 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 
 ## About
 
-Local Media Tools scrapes event data from configured sources and stores it in SQLite. You configure your sources (Instagram accounts, Facebook pages, web aggregators), run `/newsletter-events:research` to scrape, and `/newsletter-events:write` to generate formatted newsletters.
+Local Media Tools scrapes event data from configured sources and stores it in SQLite. Add sources with `/newsletter-events:add-source`, scrape with `/newsletter-events:research`, and generate newsletters with `/newsletter-events:write`.
 
 ### What It Does
 
@@ -41,7 +41,7 @@ The `/newsletter-events:setup` command will guide you through:
 
 1. **Get API key** at [scrapecreators.com](https://scrapecreators.com) (required for Instagram)
 2. **Add key** to `~/.config/local-media-tools/.env`: `SCRAPECREATORS_API_KEY=your_key`
-3. **Configure sources** in `~/.config/local-media-tools/sources.yaml`
+3. **Add sources**: `/newsletter-events:add-source`
 4. **Run scraping**: `/newsletter-events:research`
 
 ### Manual Installation (Advanced)
@@ -66,10 +66,19 @@ cd local_media_tools
 # Setup environment
 claude /newsletter-events:setup
 
+# Add event sources (Instagram, Facebook, web)
+claude /newsletter-events:add-source
+
+# List configured sources
+claude /newsletter-events:list-sources
+
+# Remove a source
+claude /newsletter-events:remove-source
+
 # Scrape all configured sources
 claude /newsletter-events:research
 
-# Generate newsletter from stored events (output to current directory)
+# Generate newsletter from stored events
 claude /newsletter-events:write
 
 # Configure Facebook location discovery
@@ -78,9 +87,9 @@ claude /newsletter-events:setup-location
 
 ## Configuration
 
-All user configuration is stored in `~/.config/local-media-tools/` and persists across plugin upgrades.
+Use `/newsletter-events:add-source` to add sources interactively, or edit `~/.config/local-media-tools/sources.yaml` directly. Configuration persists across plugin upgrades.
 
-Edit `~/.config/local-media-tools/sources.yaml`:
+Example `sources.yaml`:
 
 ```yaml
 newsletter:
@@ -166,7 +175,10 @@ The discovery process is interactive - Claude navigates to Facebook's events pag
 │   ├── research.md         # /newsletter-events:research - Scrape all sources
 │   ├── write.md            # /newsletter-events:write - Generate newsletter
 │   ├── setup.md            # /newsletter-events:setup - Environment setup
-│   └── setup-location.md   # /newsletter-events:setup-location - Facebook location
+│   ├── setup-location.md   # /newsletter-events:setup-location - Facebook location
+│   ├── add-source.md       # /newsletter-events:add-source - Add sources
+│   ├── list-sources.md     # /newsletter-events:list-sources - View sources
+│   └── remove-source.md    # /newsletter-events:remove-source - Remove sources
 ├── skills/
 │   ├── newsletter-events-research/   # Event scraping workflows
 │   ├── newsletter-events-write/      # Newsletter generation
@@ -223,7 +235,7 @@ bun install
 
 ## Author
 
-**Aniket Panjwani** - Building tools for local media and hyperlocal journalism.
+**Aniket Panjwani, PhD** - I build and deploy AI solutions for small businesses. Interested in working with me? Schedule a [Growth Mapping Call](https://tidycal.com/aniketpanjwani/growth-mapping-call).
 
 ## License
 
