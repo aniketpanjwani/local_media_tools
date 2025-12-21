@@ -4,8 +4,39 @@ Scrape event listings from websites using the Firecrawl API.
 
 ## Prerequisites
 
-- [Firecrawl API key](https://firecrawl.dev) (has free tier)
+- [Firecrawl API key](https://firecrawl.dev)
 - Website with scrapeable event listings
+
+## Pricing & Usage Estimates
+
+Firecrawl uses a credit-based system. Most active users will need a paid plan.
+
+| Plan | Cost | Credits | Good For |
+|------|------|---------|----------|
+| Free | $0 | 500 | Testing, 1-2 sources one-time |
+| Hobby | $16/mo | 3,000 | 2-5 sources, weekly scraping |
+| Standard | $83/mo | 100,000 | Heavy usage, many sources |
+
+### Credit Costs
+
+| Operation | Credits |
+|-----------|---------|
+| Map (URL discovery) | 1 |
+| Scrape (page content) | 1 per page |
+| Crawl (deep discovery) | 1 per page |
+
+### Typical Usage
+
+| Operation | Credits | Notes |
+|-----------|---------|-------|
+| Profile new source | 1-30 | 1 map, or up to 30 crawl if map fails |
+| Weekly research (per source) | 50-100 | Only scrapes NEW pages |
+
+**Example:** 3 sources × 4 weeks × 75 new pages = ~900 credits/month → **Hobby plan**
+
+The free tier (500 credits) covers initial setup and testing, but ongoing weekly scraping of 2+ sources will require the Hobby plan ($16/mo).
+
+See [Firecrawl Pricing](https://www.firecrawl.dev/pricing) for current rates.
 
 ## API Key Setup
 

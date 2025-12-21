@@ -28,7 +28,7 @@ FIRECRAWL_API_KEY=your_key_here
 
 **Get API keys:**
 - ScrapeCreators: [scrapecreators.com](https://scrapecreators.com)
-- Firecrawl: [firecrawl.dev](https://firecrawl.dev)
+- Firecrawl: [firecrawl.dev](https://firecrawl.dev) — Free tier has 500 credits; most active users need Hobby plan ($16/mo). See [pricing details](examples/web-aggregator.md#pricing--usage-estimates).
 
 ## Sources Configuration (sources.yaml)
 
