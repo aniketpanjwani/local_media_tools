@@ -2,205 +2,144 @@
 
 <required_reading>
 Read before proceeding:
-- `references/firecrawl-api.md`
 - `references/event-detection.md`
 </required_reading>
 
+<critical>
+USE THE CLI TOOL - DO NOT import Python modules directly.
+
+The CLI handles Firecrawl API calls and URL tracking. Claude's job is to extract events from the returned markdown.
+</critical>
+
 <process>
-## Step 1: Load Configuration
 
-```python
-from config.config_schema import AppConfig
-from pathlib import Path
+## Step 0: Get Plugin Directory
 
-config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
-config = AppConfig.from_yaml(config_path)
-sources = config.sources.web_aggregators.sources
-
-if not sources:
-    print("No web aggregator sources configured in sources.yaml")
-    # Exit workflow
+```bash
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
 ```
 
-## Step 2: Discover and Filter URLs
+Save the output path as `PLUGIN_DIR`.
 
-For each aggregator, use its stored profile to discover event page URLs efficiently.
+## Step 1: Discover URLs (Optional Preview)
 
-```python
-from scripts.scrape_firecrawl import FirecrawlClient, FirecrawlError
-from scripts.url_utils import normalize_url
-from schemas.sqlite_storage import SqliteStorage
-from datetime import date
-import json
-import re
+To see what URLs will be scraped without scraping:
 
-client = FirecrawlClient()
-db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
-storage = SqliteStorage(db_path)
-
-for source in sources:
-    try:
-        profile = source.profile  # May be None for legacy configs
-
-        # 1. Discover event page URLs using profile-guided strategy
-        if profile and profile.discovery_method == "crawl":
-            # Use crawl with stored parameters (profile says map failed for this site)
-            print(f"ℹ {source.name}: Using crawl (per profile)")
-            crawl_result = client.app.crawl_url(
-                source.url,
-                limit=source.max_pages,
-                max_discovery_depth=profile.crawl_depth,
-                scrape_options={"formats": ["links"]}
-            )
-            all_links = []
-            for page in crawl_result.get("data", []):
-                all_links.extend(page.get("links", []))
-
-            # Filter using learned regex from profile (or user override)
-            pattern = source.event_url_pattern or profile.event_url_regex
-            if pattern:
-                discovered_urls = [u for u in all_links if re.search(pattern, u)]
-            else:
-                # Fallback to default patterns
-                discovered_urls = client._filter_event_urls(all_links, None)
-        else:
-            # Default: use map (fast path, works for most sites)
-            discovered_urls = client.discover_event_urls(
-                url=source.url,
-                max_pages=source.max_pages,
-                event_url_pattern=source.event_url_pattern,
-            )
-
-        # 2. Normalize discovered URLs
-        # Map normalized -> original for scraping
-        normalized_map = {normalize_url(u): u for u in discovered_urls}
-
-        # 3. Get already-scraped URLs for this source
-        existing_urls = storage.get_scraped_urls_for_source(source.name)
-
-        # 4. Filter to NEW URLs only
-        new_urls = [(norm, orig) for norm, orig in normalized_map.items()
-                    if norm not in existing_urls]
-
-        print(f"ℹ {source.name}: Found {len(discovered_urls)} URLs, {len(new_urls)} new")
-
-        if not new_urls:
-            print(f"  → No new URLs to scrape")
-            continue
-
-        # Continue to scraping...
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py discover --all
 ```
 
-## Step 3: Scrape New URLs Only
-
-```python
-        pages_to_process = []
-        for normalized_url, original_url in new_urls:
-            try:
-                # Scrape the page to get markdown
-                page = client.scrape_url(original_url)
-                pages_to_process.append({
-                    "normalized_url": normalized_url,
-                    "original_url": original_url,
-                    "markdown": page.get("markdown", ""),
-                    "title": page.get("title", ""),
-                })
-            except FirecrawlError as e:
-                print(f"  ✗ Failed to scrape {original_url}: {e}")
-                continue
-
-        # Save raw markdown for reference
-        data_dir = Path.home() / ".config" / "local-media-tools" / "data" / "raw"
-        data_dir.mkdir(parents=True, exist_ok=True)
-        raw_path = data_dir / f"web_{source.name}_{date.today()}.json"
-        with open(raw_path, "w") as f:
-            json.dump(pages_to_process, f, indent=2)
-
-        print(f"✓ {source.name}: scraped {len(pages_to_process)} new pages")
-
-    except FirecrawlError as e:
-        print(f"✗ {source.name}: {e}")
-        continue
+Or for a specific source:
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py discover --source "Source Name"
 ```
 
-## Step 4: Extract Events (Claude)
+This shows how many URLs are found and how many are new (not yet scraped).
 
-For each scraped page, Claude analyzes the markdown and extracts events.
+## Step 2: Scrape New Pages
 
-**For each page in `pages_to_process`:**
+Run the scraper to get markdown content from new URLs:
 
-1. Read the markdown
-2. Identify all events mentioned
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py scrape --source "Source Name"
+```
+
+Or scrape all sources:
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py scrape --all --limit 20
+```
+
+**Output:** JSON array of scraped pages, each with:
+- `source_name`: Name of the web aggregator
+- `original_url`: The page URL
+- `normalized_url`: Canonical URL for tracking
+- `title`: Page title
+- `markdown`: Full page content as markdown
+- `scraped_at`: Timestamp
+
+## Step 3: Extract Events from Markdown (Claude)
+
+For each page in the JSON output, analyze the markdown and extract events.
+
+**For each page:**
+
+1. Read the markdown content
+2. Identify all events mentioned on the page
 3. For each event, extract:
-   - Title
-   - Date (parse to YYYY-MM-DD)
-   - Time (start and end if available)
-   - Venue name and address
-   - Description
-   - Price (or "Free")
-   - Ticket URL
-   - Event URL (the page it came from)
+   - **Title**: Event name
+   - **Date**: Parse to YYYY-MM-DD format
+   - **Time**: Start and end times if available
+   - **Venue**: Name and address
+   - **Description**: Brief description
+   - **Price**: Ticket price or "Free"
+   - **Ticket URL**: Where to buy tickets
+   - **Source URL**: The page URL (from `original_url`)
 
-4. Create Event objects:
+4. Skip pages that don't contain event information (navigation pages, category listings without dates)
 
-```python
+## Step 4: Save Events to Database
+
+For each extracted event, save to the database:
+
+```bash
+cd "$PLUGIN_DIR" && uv run python -c "
+from pathlib import Path
+from schemas.sqlite_storage import SqliteStorage
 from schemas.event import Event, Venue, EventSource
 
+storage = SqliteStorage(Path.home() / '.config/local-media-tools/data/events.db')
+
 event = Event(
-    title=extracted_title,
-    venue=Venue(name=venue_name, address=venue_address),
-    event_date=parsed_date,
-    start_time=parsed_time,
+    title='EVENT_TITLE',
+    venue=Venue(name='VENUE_NAME', address='VENUE_ADDRESS'),
+    event_date='YYYY-MM-DD',
+    start_time='HH:MM',
     source=EventSource.WEB_AGGREGATOR,
-    source_url=page["original_url"],
-    description=description,
-    price=price,
-    ticket_url=ticket_url,
+    source_url='ORIGINAL_URL',
+    description='DESCRIPTION',
+    price='PRICE',
+    ticket_url='TICKET_URL',
     confidence=0.8,
     needs_review=True,
-    review_notes=f"Extracted from {source.name}",
+    review_notes='Extracted from SOURCE_NAME',
 )
+
+from schemas.event import EventCollection
+result = storage.save(EventCollection(events=[event]))
+print(f'Saved: {result.saved} new, {result.updated} updated')
+"
 ```
 
-## Step 5: Save Events, Then Mark URLs Scraped
+## Step 5: Mark URLs as Scraped
 
-**CRITICAL**: Save events FIRST, then mark URLs as scraped. This prevents data
-loss if event saving fails - we don't want to mark a URL as "scraped" when no
-events were actually saved.
+**CRITICAL**: Only mark URLs as scraped AFTER successfully saving events.
 
-```python
-from schemas.event import EventCollection
+For each page that was processed:
 
-# For each page that was processed
-for page in pages_to_process:
-    events_from_page = events_by_url.get(page["original_url"], [])
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py mark-scraped \
+  --source "Source Name" \
+  --url "https://example.com/events/event-page" \
+  --events-count 1
+```
 
-    # 1. Save events FIRST
-    if events_from_page:
-        collection = EventCollection(events=events_from_page)
-        result = storage.save(collection)
-        print(f"  → {page['original_url']}: {result.saved} new, {result.updated} updated")
+This prevents re-scraping the same URLs on future runs.
 
-    # 2. THEN mark URL as scraped (only after events saved successfully)
-    storage.save_scraped_page(
-        source_name=source.name,
-        url=page["normalized_url"],
-        events_count=len(events_from_page),
-    )
+## Step 6: Show Statistics
 
-print(f"✓ {source.name}: Complete")
+After processing, show summary:
+
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py show-stats
 ```
 
 </process>
 
 <success_criteria>
 Web aggregator research complete when:
-- [ ] All configured sources processed
-- [ ] Only NEW URLs scraped (already-scraped URLs skipped)
-- [ ] Raw markdown saved to `~/.config/local-media-tools/data/raw/web_*.json`
-- [ ] Claude extracted events from markdown content
-- [ ] Events saved BEFORE URLs marked as scraped (prevents data loss)
-- [ ] Events saved to `~/.config/local-media-tools/data/events.db`
-- [ ] URLs recorded in `scraped_pages` table
-- [ ] Events marked with `needs_review=True` for human verification
+- [ ] CLI scrape command executed and returned pages JSON
+- [ ] Events extracted from each page's markdown
+- [ ] Events saved to database with `needs_review=True`
+- [ ] Each processed URL marked as scraped via `mark-scraped`
+- [ ] Statistics show updated page and event counts
 </success_criteria>

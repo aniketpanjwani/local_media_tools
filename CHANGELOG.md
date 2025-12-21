@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2025-12-21
+
+### Added
+- **CLI tool for web aggregators**: `scripts/cli_web.py`
+  - `discover --all` - Preview URLs without scraping
+  - `scrape --source "Name"` - Scrape pages and return markdown JSON
+  - `mark-scraped` - Mark URLs as processed after event extraction
+  - `show-stats` - Show scraping statistics
+
+### Changed
+- Updated `commands/research.md` to include web aggregator scraping instructions
+- Rewrote `workflows/research-web-aggregator.md` to use CLI instead of Python imports
+- Web aggregator research now matches Instagram pattern (CLI tool + Claude extraction)
+
+### Fixed
+- Web aggregator research no longer falls back to Firecrawl MCP when running from user projects
+
 ## [0.15.1] - 2025-12-21
 
 ### Changed
@@ -188,6 +205,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.15.2]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.15.1...v0.15.2
 [0.15.1]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.15.0...v0.15.1
 [0.15.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.2...v0.15.0
 [0.14.2]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.1...v0.14.2
