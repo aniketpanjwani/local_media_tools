@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1] - 2025-12-21
+
+### Changed
+- Standardized plugin path discovery using `installed_plugins.json` lookup
+  - All commands and skills now use: `cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'`
+  - Removed reliance on `$CLAUDE_PLUGIN_ROOT` env var (not reliably set in all contexts)
+  - Matches pattern already used in `commands/research.md`
+
+### Fixed
+- Claude no longer needs to search for plugin scripts when running from user projects
+
 ## [0.15.0] - 2025-12-21
 
 ### Added
@@ -15,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Commands and skills now call CLI tool instead of importing Python modules
-  - `cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py <url>`
 - Updated `firecrawl-py` API usage to match v1.x (`.map()`, `.scrape()`, `.crawl()`)
 - Fixed `scrape_firecrawl.py` to handle new Firecrawl SDK response types
 
@@ -178,6 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.15.1]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.15.0...v0.15.1
 [0.15.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.2...v0.15.0
 [0.14.2]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.0...v0.14.1

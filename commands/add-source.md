@@ -134,20 +134,23 @@ new_source = {
 <critical>
 RUN THE PROFILER CLI FROM THE PLUGIN DIRECTORY.
 
-The plugin includes a CLI tool for profiling. Run it using:
-
-```bash
-cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py "{url}"
-```
-
-This returns JSON with discovery_method, event_urls, and suggested regex pattern.
+The plugin includes a CLI tool for profiling. First get the plugin path, then run the profiler.
 DO NOT try to import Python modules directly - use the CLI tool.
 </critical>
 
-**Run the profiler:**
+**Step 1: Get plugin directory:**
 ```bash
-cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py "{url}"
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
 ```
+
+Save the output path as `PLUGIN_DIR`.
+
+**Step 2: Run the profiler:**
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/profile_source.py "{url}"
+```
+
+This returns JSON with discovery_method, event_urls, and suggested regex pattern.
 
 The profiler will:
 1. Try `map_url()` first (fast sitemap/link discovery)

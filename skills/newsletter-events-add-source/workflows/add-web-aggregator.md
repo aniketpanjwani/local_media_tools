@@ -85,10 +85,18 @@ DO NOT try to import Python modules directly.
 
 ### 3a: Run the Profiler CLI
 
-The plugin includes a CLI tool for profiling. Run it:
+The plugin includes a CLI tool for profiling. First get the plugin path, then run the profiler.
 
+**Step 1: Get plugin directory:**
 ```bash
-cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py "{url}"
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
+```
+
+Save the output path as `PLUGIN_DIR`.
+
+**Step 2: Run the profiler:**
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/profile_source.py "{url}"
 ```
 
 This will:

@@ -48,10 +48,17 @@ bun --version 2>/dev/null || echo "NOT_INSTALLED"
 
 **STOP HERE if runtimes missing.** User must install them first.
 
-### Step 2: Install Dependencies
+### Step 2: Get Plugin Directory and Install Dependencies
+
+First, get the plugin installation path:
+```bash
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
+```
+
+Save the output path as `PLUGIN_DIR`, then install dependencies:
 
 ```bash
-cd ${CLAUDE_PLUGIN_ROOT}
+cd "$PLUGIN_DIR"
 uv sync
 bun install
 ```
@@ -142,8 +149,7 @@ Next steps:
 For machine-readable output, run `scripts/validate_setup.py`:
 
 ```bash
-cd ${CLAUDE_PLUGIN_ROOT}
-uv run python scripts/validate_setup.py
+cd "$PLUGIN_DIR" && uv run python scripts/validate_setup.py
 ```
 
 This returns structured JSON:

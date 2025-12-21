@@ -1,10 +1,18 @@
 # Workflow: Setup Environment
 
 <process>
+## Step 0: Get Plugin Directory
+
+```bash
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
+```
+
+Save the output path as `PLUGIN_DIR`.
+
 ## Step 1: Run Bootstrap Script
 
 ```bash
-cd ${CLAUDE_PLUGIN_ROOT}
+cd "$PLUGIN_DIR"
 ./scripts/setup.sh
 ```
 
@@ -45,7 +53,7 @@ uv --version
 bun --version
 
 # Check Python imports
-cd ${CLAUDE_PLUGIN_ROOT}
+cd "$PLUGIN_DIR"
 uv run python -c "import rapidfuzz; import pydantic; import structlog; print('OK')"
 
 # Check Node.js
