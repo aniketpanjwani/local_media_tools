@@ -49,8 +49,8 @@ Then:
 
 ### For Developers
 
-| [Architecture](docs/architecture.md) | [Development](docs/development.md) |
-|-------------------------------------|-----------------------------------|
+| [Architecture](docs/architecture.md) | [Development](docs/development.md) | [Changelog](CHANGELOG.md) |
+|-------------------------------------|-----------------------------------|---------------------------|
 
 ## Requirements
 
