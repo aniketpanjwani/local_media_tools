@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-12-21
+
+### Changed
+- Split `/add-source` skill into dispatcher + workflows pattern
+  - `SKILL.md` now routes to type-specific workflows
+  - `workflows/add-instagram.md` for Instagram accounts (simple)
+  - `workflows/add-web-aggregator.md` for web sources (with mandatory profiling)
+- Profiling step marked as `<critical>` and cannot be skipped
+- SKILL.md reduced from 317 lines to 113 lines
+
+### Fixed
+- Claude no longer skips profiling step when adding web sources
+- Clearer separation of concerns between source types
+
 ## [0.13.0] - 2025-12-21
 
 ### Added
@@ -134,6 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.14.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.10.0...v0.11.0
