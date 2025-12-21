@@ -3,6 +3,16 @@ name: newsletter-events-add-source
 description: Add Instagram accounts or web aggregators to sources.yaml configuration
 ---
 
+<required_reading>
+STOP. Before doing ANYTHING else, you MUST read this entire file.
+
+This skill uses a dispatcher pattern with separate workflows:
+- For web URLs → Read `workflows/add-web-aggregator.md` (HAS MANDATORY PROFILING)
+- For Instagram → Read `workflows/add-instagram.md`
+
+DO NOT just edit sources.yaml directly. Follow the workflows.
+</required_reading>
+
 <essential_principles>
 ## Configuration Location
 

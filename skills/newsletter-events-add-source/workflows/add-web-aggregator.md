@@ -1,5 +1,16 @@
 # Workflow: Add Web Aggregator
 
+<stop>
+YOU MUST FOLLOW THIS WORKFLOW EXACTLY.
+
+DO NOT:
+- Skip directly to editing sources.yaml
+- Add a source without profiling
+- Take shortcuts
+
+The profiling step uses Firecrawl to probe the site. This is NOT optional.
+</stop>
+
 Add a web aggregator source WITH mandatory profiling.
 
 <critical>
