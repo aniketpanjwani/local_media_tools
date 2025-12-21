@@ -90,6 +90,28 @@ sources:
   # WEB AGGREGATORS
   # Scrapes event listing websites using Firecrawl.
   # Requires: FIRECRAWL_API_KEY in .env
+  #
+  # How it works:
+  # 1. Firecrawl discovers event page URLs from your base URL
+  # 2. URLs are filtered by event_url_pattern (if set)
+  # 3. Each event page is scraped to markdown
+  # 4. Claude extracts event details from the markdown
+  # 5. Scraped URLs are tracked to avoid re-scraping (incremental)
+  #
+  # Configuration fields:
+  # | Field             | Type    | Default   | Description                               |
+  # |-------------------|---------|-----------|-------------------------------------------|
+  # | url               | string  | required  | Base URL of the event listing site        |
+  # | name              | string  | required  | Display name for this source              |
+  # | source_type       | enum    | "listing" | Site type (informational only):           |
+  # |                   |         |           | - listing: general event list             |
+  # |                   |         |           | - calendar: date-organized events         |
+  # |                   |         |           | - venue: single venue's schedule          |
+  # | max_pages         | int     | 50        | Max event URLs to discover (1-200)        |
+  # | event_url_pattern | string  | null      | Glob pattern to filter URLs:              |
+  # |                   |         |           | - "/events/*" matches /events/jazz-night  |
+  # |                   |         |           | - "/*/event/*" matches /2025/event/123    |
+  # | extraction_hints  | string  | null      | Instructions for Claude's extraction      |
   # --------------------------------------------------------------------------
   web_aggregators:
     enabled: true
@@ -113,7 +135,10 @@ sources:
     # - url: "https://thevenue.com/schedule"
     #   name: "The Venue"
     #   source_type: "venue"
-    #   extraction_hints: "Events in table rows with date, artist, and time"
+    #   extraction_hints: "Events are in table rows with date, artist, and time columns"
+    #
+    # To manually refresh an event page after it's been scraped:
+    #   /newsletter-events:update-event https://hvmag.com/events/jazz-night
 
   # --------------------------------------------------------------------------
   # EVENTBRITE (Future)

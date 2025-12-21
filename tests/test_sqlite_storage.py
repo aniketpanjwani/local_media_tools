@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from schemas.event import Event, EventCategory, EventCollection, EventSource, Venue
-from schemas.sqlite_storage import SqliteStorage, SaveResult
+from schemas.sqlite_storage import CURRENT_SCHEMA_VERSION, SqliteStorage, SaveResult
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ class TestSqliteStorageInit:
                 "SELECT value FROM schema_metadata WHERE key = 'version'"
             ).fetchone()
             assert result is not None
-            assert result[0] == "2.1.0"
+            assert result[0] == CURRENT_SCHEMA_VERSION
 
 
 class TestSaveAndLoad:
@@ -700,3 +700,98 @@ class TestProfileAndPostQueries:
         storage = SqliteStorage(temp_db)
         result = storage.get_posts_for_profile("nonexistent")
         assert result == {}
+
+
+class TestScrapedPages:
+    """Tests for scraped_pages URL tracking."""
+
+    def test_get_scraped_urls_empty(self, temp_db: Path) -> None:
+        """get_scraped_urls_for_source returns empty set for new source."""
+        storage = SqliteStorage(temp_db)
+        result = storage.get_scraped_urls_for_source("New Source")
+        assert result == set()
+
+    def test_save_and_get_scraped_url(self, temp_db: Path) -> None:
+        """save_scraped_page stores URL, get_scraped_urls_for_source retrieves it."""
+        storage = SqliteStorage(temp_db)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/123", 2)
+
+        result = storage.get_scraped_urls_for_source("HV Magazine")
+        assert "https://hvmag.com/events/123" in result
+
+    def test_save_multiple_urls_same_source(self, temp_db: Path) -> None:
+        """Multiple URLs for same source are all retrieved."""
+        storage = SqliteStorage(temp_db)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/1", 1)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/2", 2)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/3", 0)
+
+        result = storage.get_scraped_urls_for_source("HV Magazine")
+        assert len(result) == 3
+        assert "https://hvmag.com/events/1" in result
+        assert "https://hvmag.com/events/2" in result
+        assert "https://hvmag.com/events/3" in result
+
+    def test_urls_isolated_by_source(self, temp_db: Path) -> None:
+        """URLs are isolated per source name."""
+        storage = SqliteStorage(temp_db)
+        storage.save_scraped_page("Source A", "https://a.com/1", 1)
+        storage.save_scraped_page("Source B", "https://b.com/1", 1)
+
+        result_a = storage.get_scraped_urls_for_source("Source A")
+        result_b = storage.get_scraped_urls_for_source("Source B")
+
+        assert "https://a.com/1" in result_a
+        assert "https://b.com/1" not in result_a
+        assert "https://b.com/1" in result_b
+        assert "https://a.com/1" not in result_b
+
+    def test_save_scraped_page_upserts(self, temp_db: Path) -> None:
+        """Saving same URL twice updates instead of duplicating."""
+        storage = SqliteStorage(temp_db)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/1", 1)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/1", 3)
+
+        result = storage.get_scraped_urls_for_source("HV Magazine")
+        assert len(result) == 1
+
+        # Check events_extracted was updated
+        page = storage.get_scraped_page("HV Magazine", "https://hvmag.com/events/1")
+        assert page is not None
+        assert page["events_extracted"] == 3
+
+    def test_get_scraped_page_returns_details(self, temp_db: Path) -> None:
+        """get_scraped_page returns full record details."""
+        storage = SqliteStorage(temp_db)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/1", 5)
+
+        page = storage.get_scraped_page("HV Magazine", "https://hvmag.com/events/1")
+        assert page is not None
+        assert page["source_name"] == "HV Magazine"
+        assert page["url"] == "https://hvmag.com/events/1"
+        assert page["events_extracted"] == 5
+        assert "scraped_at" in page
+
+    def test_get_scraped_page_returns_none_not_found(self, temp_db: Path) -> None:
+        """get_scraped_page returns None for unknown URL."""
+        storage = SqliteStorage(temp_db)
+        result = storage.get_scraped_page("HV Magazine", "https://unknown.com/1")
+        assert result is None
+
+    def test_update_scraped_page_updates_record(self, temp_db: Path) -> None:
+        """update_scraped_page updates existing record."""
+        storage = SqliteStorage(temp_db)
+        storage.save_scraped_page("HV Magazine", "https://hvmag.com/events/1", 2)
+
+        result = storage.update_scraped_page("HV Magazine", "https://hvmag.com/events/1", 4)
+        assert result is True
+
+        page = storage.get_scraped_page("HV Magazine", "https://hvmag.com/events/1")
+        assert page is not None
+        assert page["events_extracted"] == 4
+
+    def test_update_scraped_page_returns_false_not_found(self, temp_db: Path) -> None:
+        """update_scraped_page returns False for unknown URL."""
+        storage = SqliteStorage(temp_db)
+        result = storage.update_scraped_page("HV Magazine", "https://unknown.com/1", 4)
+        assert result is False

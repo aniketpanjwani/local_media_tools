@@ -115,6 +115,30 @@ Remove a source from configuration.
 
 ---
 
+### /newsletter-events:update-event
+
+Refresh specific event page(s) to update event data.
+
+```
+/newsletter-events:update-event https://example.com/events/jazz-night
+```
+
+**What it does:**
+- Re-scrapes the specified URL(s)
+- Extracts events from the page content
+- Updates existing events in database (or creates new ones)
+- Updates the scraped timestamp
+
+**When to use:**
+- Event details have changed (date, time, venue)
+- You want to verify event data is current
+- Events weren't extracted correctly on first scrape
+
+**Note:** Web aggregator URLs are tracked to avoid re-scraping. This command
+bypasses that to force a refresh.
+
+---
+
 ## Skills
 
 Skills are workflows that can be triggered by Claude when relevant.
@@ -127,6 +151,7 @@ Skills are workflows that can be triggered by Claude when relevant.
 | `newsletter-events-add-source` | Add sources interactively |
 | `newsletter-events-list-sources` | Display configured sources |
 | `newsletter-events-remove-source` | Remove sources |
+| `newsletter-events-update-event` | Refresh specific event pages |
 
 ## Agents
 

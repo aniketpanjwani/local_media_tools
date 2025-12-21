@@ -93,6 +93,26 @@ When Claude has trouble extracting events, add `extraction_hints` to describe th
     Some events span multiple days - treat as single event.
 ```
 
+## Incremental Scraping
+
+Web aggregator scraping is **incremental** - once a URL has been scraped, it won't be scraped again on subsequent `/research` runs. This saves API calls and processing time.
+
+On each run, you'll see:
+```
+ℹ HV Magazine: Found 55 URLs, 10 new
+✓ HV Magazine: scraped 10 new pages
+```
+
+### Refreshing Specific Events
+
+To manually refresh an event page (e.g., if details changed):
+
+```
+/newsletter-events:update-event https://hvmag.com/events/jazz-night
+```
+
+This re-scrapes the URL and updates the event data in the database.
+
 ## Testing Before Adding
 
 1. Visit the site manually to understand structure

@@ -28,7 +28,7 @@ from schemas.event import (
 )
 
 
-CURRENT_SCHEMA_VERSION = "2.1.0"
+CURRENT_SCHEMA_VERSION = "2.2.0"
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -166,6 +166,18 @@ CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);
 CREATE INDEX IF NOT EXISTS idx_events_venue_id ON events(venue_id);
 CREATE INDEX IF NOT EXISTS idx_events_post_id ON events(post_id);
 CREATE INDEX IF NOT EXISTS idx_venues_instagram ON venues(instagram_handle);
+
+-- Scraped pages table (for web aggregator URL tracking)
+CREATE TABLE IF NOT EXISTS scraped_pages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_name TEXT NOT NULL,           -- Config name (e.g., "HV Magazine")
+    url TEXT NOT NULL,                   -- Normalized event page URL
+    scraped_at TEXT NOT NULL,            -- When we scraped it
+    events_extracted INTEGER DEFAULT 0,  -- Count of events from this page
+    UNIQUE(source_name, url)
+);
+
+CREATE INDEX IF NOT EXISTS idx_scraped_pages_source ON scraped_pages(source_name);
 """
 
 
@@ -243,6 +255,10 @@ class SqliteStorage:
 
         if from_version == "2.0.0":
             self._migrate_2_0_0_to_2_1_0(conn)
+            from_version = "2.1.0"
+
+        if from_version == "2.1.0":
+            self._migrate_2_1_0_to_2_2_0(conn)
 
         conn.execute(
             "UPDATE schema_metadata SET value = ? WHERE key = 'version'",
@@ -332,6 +348,22 @@ class SqliteStorage:
             INSERT INTO post_images (post_id, image_url, image_index)
             SELECT id, display_url, 0 FROM posts WHERE display_url IS NOT NULL
         """)
+
+    def _migrate_2_1_0_to_2_2_0(self, conn: sqlite3.Connection) -> None:
+        """Migrate from 2.1.0 to 2.2.0: Add scraped_pages table for URL tracking."""
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS scraped_pages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_name TEXT NOT NULL,
+                url TEXT NOT NULL,
+                scraped_at TEXT NOT NULL,
+                events_extracted INTEGER DEFAULT 0,
+                UNIQUE(source_name, url)
+            )
+        """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scraped_pages_source ON scraped_pages(source_name)"
+        )
 
     def _find_or_create_profile(
         self, conn: sqlite3.Connection, profile: InstagramProfile
@@ -896,3 +928,94 @@ class SqliteStorage:
             rows = conn.execute(query, (handle.lstrip("@"),)).fetchall()
 
             return {row["instagram_post_id"]: dict(row) for row in rows}
+
+    # -------------------------------------------------------------------------
+    # Scraped Pages (Web Aggregator URL Tracking)
+    # -------------------------------------------------------------------------
+
+    def get_scraped_urls_for_source(self, source_name: str) -> set[str]:
+        """
+        Get all scraped URLs for a web aggregator source.
+
+        Args:
+            source_name: The source name from config (e.g., "HV Magazine")
+
+        Returns:
+            Set of normalized URLs that have been scraped for this source
+        """
+        with self._connection() as conn:
+            rows = conn.execute(
+                "SELECT url FROM scraped_pages WHERE source_name = ?",
+                (source_name,),
+            ).fetchall()
+            return {row["url"] for row in rows}
+
+    def save_scraped_page(
+        self, source_name: str, url: str, events_count: int = 0
+    ) -> None:
+        """
+        Record that a URL has been scraped.
+
+        Args:
+            source_name: The source name from config
+            url: The normalized URL that was scraped
+            events_count: Number of events extracted from this page
+        """
+        with self._connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO scraped_pages (source_name, url, scraped_at, events_extracted)
+                VALUES (?, ?, CURRENT_TIMESTAMP, ?)
+                ON CONFLICT(source_name, url) DO UPDATE SET
+                    scraped_at = CURRENT_TIMESTAMP,
+                    events_extracted = excluded.events_extracted
+                """,
+                (source_name, url, events_count),
+            )
+
+    def get_scraped_page(self, source_name: str, url: str) -> dict | None:
+        """
+        Get scraped page record for a specific URL.
+
+        Args:
+            source_name: The source name from config
+            url: The normalized URL
+
+        Returns:
+            Dict with scraped_at, events_extracted, etc. or None if not found
+        """
+        with self._connection() as conn:
+            row = conn.execute(
+                """
+                SELECT id, source_name, url, scraped_at, events_extracted
+                FROM scraped_pages
+                WHERE source_name = ? AND url = ?
+                """,
+                (source_name, url),
+            ).fetchone()
+            return dict(row) if row else None
+
+    def update_scraped_page(
+        self, source_name: str, url: str, events_count: int
+    ) -> bool:
+        """
+        Update an existing scraped page record (for /update-event skill).
+
+        Args:
+            source_name: The source name from config
+            url: The normalized URL
+            events_count: New count of events extracted
+
+        Returns:
+            True if record was updated, False if not found
+        """
+        with self._connection() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE scraped_pages
+                SET scraped_at = CURRENT_TIMESTAMP, events_extracted = ?
+                WHERE source_name = ? AND url = ?
+                """,
+                (events_count, source_name, url),
+            )
+            return cursor.rowcount > 0

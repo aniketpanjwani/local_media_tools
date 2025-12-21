@@ -11,6 +11,7 @@ from schemas.event import (
     EventCollection,
     EventSource,
     Venue,
+    normalize_title,
 )
 
 
@@ -164,3 +165,105 @@ class TestEventCollection:
         assert "TUESDAY" in by_day
         assert len(by_day["MONDAY"]) == 1
         assert len(by_day["TUESDAY"]) == 1
+
+
+class TestNormalizeTitle:
+    """Tests for normalize_title function."""
+
+    def test_basic_normalization(self):
+        """Test basic lowercase and strip."""
+        assert normalize_title("  Jazz Night  ") == "jazz night"
+
+    def test_removes_live_prefix(self):
+        """Test removing 'live:' prefix."""
+        assert normalize_title("Live: Jazz Night") == "jazz night"
+
+    def test_removes_tonight_prefix(self):
+        """Test removing 'tonight:' prefix."""
+        assert normalize_title("Tonight: Special Performance") == "special performance"
+
+    def test_removes_presents_prefix(self):
+        """Test removing 'presents:' prefix."""
+        assert normalize_title("Presents: The Jazz Band") == "the jazz band"
+
+    def test_removes_featuring_prefix(self):
+        """Test removing 'featuring:' prefix."""
+        assert normalize_title("Featuring: Artist Name") == "artist name"
+
+    def test_removes_feat_prefix(self):
+        """Test removing 'feat:' prefix."""
+        assert normalize_title("Feat: Special Guest") == "special guest"
+
+    def test_removes_punctuation(self):
+        """Test removing punctuation."""
+        assert normalize_title("Jazz Night! @ The Venue") == "jazz night the venue"
+
+    def test_collapses_spaces(self):
+        """Test collapsing multiple spaces."""
+        assert normalize_title("Jazz    Night   at   Venue") == "jazz night at venue"
+
+    def test_only_removes_one_prefix(self):
+        """Test that only one prefix is removed."""
+        # "live:" should be removed, leaving "presents: something"
+        result = normalize_title("Live: Presents: Something")
+        assert result == "presents something"
+
+    def test_preserves_words_with_colons(self):
+        """Test that colons within titles are handled."""
+        assert normalize_title("Time: 8PM Jazz Night") == "time 8pm jazz night"
+
+    def test_complex_normalization(self):
+        """Test complex title with multiple transformations."""
+        assert normalize_title("  LIVE: Jazz Night!! @ Colony  ") == "jazz night colony"
+
+
+class TestNormalizedUniqueKey:
+    """Tests for unique_key with title normalization."""
+
+    def test_similar_titles_match(self, sample_venue):
+        """Test that similar titles produce same unique_key."""
+        event1 = Event(
+            title="Jazz Night",
+            venue=sample_venue,
+            event_date=date(2025, 12, 15),
+            source=EventSource.INSTAGRAM,
+        )
+        event2 = Event(
+            title="JAZZ NIGHT!",  # Different case and punctuation
+            venue=sample_venue,
+            event_date=date(2025, 12, 15),
+            source=EventSource.FACEBOOK,
+        )
+        assert event1.unique_key == event2.unique_key
+
+    def test_prefix_variants_match(self, sample_venue):
+        """Test that title with prefix matches without prefix."""
+        event1 = Event(
+            title="Jazz Night",
+            venue=sample_venue,
+            event_date=date(2025, 12, 15),
+            source=EventSource.INSTAGRAM,
+        )
+        event2 = Event(
+            title="Live: Jazz Night",  # With prefix
+            venue=sample_venue,
+            event_date=date(2025, 12, 15),
+            source=EventSource.FACEBOOK,
+        )
+        assert event1.unique_key == event2.unique_key
+
+    def test_different_titles_dont_match(self, sample_venue):
+        """Test that actually different titles have different keys."""
+        event1 = Event(
+            title="Jazz Night",
+            venue=sample_venue,
+            event_date=date(2025, 12, 15),
+            source=EventSource.INSTAGRAM,
+        )
+        event2 = Event(
+            title="Blues Night",  # Different content
+            venue=sample_venue,
+            event_date=date(2025, 12, 15),
+            source=EventSource.INSTAGRAM,
+        )
+        assert event1.unique_key != event2.unique_key

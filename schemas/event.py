@@ -9,8 +9,54 @@ from datetime import date, datetime, time
 from enum import Enum
 from typing import Any, Literal
 import hashlib
+import re
 
 from pydantic import BaseModel, Field, field_validator
+
+
+# Prefixes commonly added by venues that should be stripped for deduplication
+TITLE_PREFIXES_TO_STRIP = frozenset({
+    "live:",
+    "tonight:",
+    "presents:",
+    "featuring:",
+    "feat:",
+    "ft:",
+    "special:",
+    "exclusive:",
+})
+
+
+def normalize_title(title: str) -> str:
+    """
+    Aggressively normalize event title for fuzzy matching and deduplication.
+
+    Transformations:
+    - Lowercase
+    - Strip whitespace
+    - Remove common prefixes (live:, tonight:, presents:, etc.)
+    - Remove punctuation
+    - Collapse multiple spaces
+
+    Args:
+        title: The event title to normalize
+
+    Returns:
+        Normalized title string
+    """
+    result = title.lower().strip()
+
+    # Remove common prefixes
+    for prefix in TITLE_PREFIXES_TO_STRIP:
+        if result.startswith(prefix):
+            result = result[len(prefix) :].strip()
+            break  # Only remove one prefix
+
+    # Remove punctuation (keep alphanumeric and spaces)
+    result = re.sub(r"[^\w\s]", "", result)
+
+    # Collapse multiple spaces to single space
+    return " ".join(result.split())
 
 
 class EventSource(str, Enum):
@@ -205,10 +251,10 @@ class Event(BaseModel):
             object.__setattr__(self, "unique_key", self._compute_unique_key())
 
     def _compute_unique_key(self) -> str:
-        """Generate stable hash for deduplication."""
-        normalized_title = self.title.lower().strip()
+        """Generate stable hash for deduplication with fuzzy title matching."""
+        normalized = normalize_title(self.title)
         normalized_venue = self.venue.name.lower().strip()
-        key_string = f"{normalized_title}|{self.event_date.isoformat()}|{normalized_venue}"
+        key_string = f"{normalized}|{self.event_date.isoformat()}|{normalized_venue}"
         return hashlib.md5(key_string.encode()).hexdigest()[:16]
 
     @property

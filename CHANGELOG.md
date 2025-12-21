@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2025-12-21
+
+### Added
+- URL-level tracking for web aggregators (incremental scraping)
+  - Only scrape NEW event URLs on subsequent runs
+  - Track scraped URLs in `scraped_pages` table
+  - Shows progress: "Found 55 URLs, 10 new"
+- `/newsletter-events:update-event` command to refresh specific event pages
+- Fuzzy title matching for better event deduplication
+  - Strips common prefixes (live:, tonight:, presents:)
+  - Normalizes punctuation and whitespace
+- URL normalization to handle tracking params and trailing slashes
+- `scripts/migrate_unique_keys.py` to recompute keys after upgrade
+
+### Changed
+- Database schema upgraded to 2.2.0 (auto-migrates)
+- Web aggregator workflow saves events BEFORE marking URL as scraped (prevents data loss)
+- Improved configuration documentation for web aggregator fields
+
+### Migration
+- Run `uv run python scripts/migrate_unique_keys.py --dry-run` to preview key changes
+- Then `uv run python scripts/migrate_unique_keys.py` to apply
+- Existing events will get updated unique_keys for better deduplication
+
 ## [0.11.0] - 2025-12-21
 
 ### Changed
@@ -92,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.12.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.9.5...v0.10.0
 [0.9.5]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.9.4...v0.9.5
