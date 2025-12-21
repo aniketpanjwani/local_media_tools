@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2025-12-21
+
+### Added
+- Source profiling for web aggregators ("learn once, apply forever")
+  - `/add-source` now probes sites to discover optimal scraping strategy
+  - Auto-detects when `map` fails and `crawl` is needed
+  - Learns URL patterns from discovered event pages
+  - Stores profile in sources.yaml for future runs
+- `WebAggregatorProfile` schema with discovery_method, crawl_depth, event_url_regex
+- Crawl fallback when Firecrawl's map_url() finds too few URLs
+
+### Changed
+- `/research` now uses stored profiles instead of re-discovering each run
+- Web aggregator workflow checks profile.discovery_method before choosing map vs crawl
+
+### Fixed
+- Sites like I Love NY and Catskills Visitor Center now work (map_url failed, crawl succeeds)
+
 ## [0.12.0] - 2025-12-21
 
 ### Added
@@ -116,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.13.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.9.5...v0.10.0
