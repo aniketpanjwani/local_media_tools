@@ -11,7 +11,7 @@ Before starting, you'll need:
 **API keys (at least one required):**
 - [ ] [ScrapeCreators API key](https://scrapecreators.com) - Required for Instagram
 - [ ] [Firecrawl API key](https://firecrawl.dev) - Required for web aggregators
-- [ ] No API key needed for Facebook page scraping
+- [ ] No API key needed for Facebook event URLs
 
 ## Step 1: Install the Plugin
 
@@ -44,9 +44,11 @@ This command will:
 /newsletter-events:add-source
 ```
 
-Follow the prompts to add an Instagram account, Facebook page, or web aggregator.
+Follow the prompts to add an Instagram account or web aggregator.
 
 **Tip:** Start with one source to test the workflow before adding more.
+
+**Note:** For Facebook events, pass URLs directly to `/research` instead of adding them here.
 
 **Verify:** Source appears when you run `/newsletter-events:list-sources`
 
@@ -76,7 +78,7 @@ Claude generates a markdown newsletter based on your scraped events and formatti
 
 - [Add more sources](configuration.md#adding-sources) to expand coverage
 - [Customize formatting](configuration.md#formatting-preferences) to match your style
-- [Set up Facebook location discovery](examples/facebook.md#location-based-discovery) for automatic venue finding
+- [Add Facebook events](examples/facebook.md) by passing URLs to `/research`
 
 ## Quick Reference
 

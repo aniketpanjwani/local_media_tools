@@ -4,43 +4,11 @@
  *
  * JSON stdin/stdout contract for subprocess communication with Python.
  *
- * Input:  { "action": "scrape_page_events" | "scrape_single_event", "url": "...", "options": {...} }
- * Output: { "success": true, "data": [...] } or { "success": false, "error": "..." }
+ * Input:  { "action": "scrape_single_event", "url": "..." }
+ * Output: { "success": true, "data": {...} } or { "success": false, "error": "..." }
  */
 
-import {
-  scrapeFbEvent,
-  scrapeFbEventList,
-  EventType,
-} from "facebook-event-scraper";
-
-/**
- * Scrape all events from a Facebook page's events listing
- */
-async function scrapePageEvents(url, options = {}) {
-  const events = [];
-
-  try {
-    // Use scrapeFbEventList for page events
-    const eventList = await scrapeFbEventList(url, EventType.Upcoming);
-
-    if (!eventList || eventList.length === 0) {
-      return [];
-    }
-
-    // Limit number of events
-    const limit = options.limit || 20;
-    const eventsToProcess = eventList.slice(0, limit);
-
-    for (const eventData of eventsToProcess) {
-      events.push(normalizeEvent(eventData, url));
-    }
-
-    return events;
-  } catch (error) {
-    throw new Error(`Failed to scrape page events: ${error.message}`);
-  }
-}
+import { scrapeFbEvent } from "facebook-event-scraper";
 
 /**
  * Scrape a single Facebook event
@@ -173,10 +141,6 @@ async function main() {
     let data;
 
     switch (action) {
-      case "scrape_page_events":
-        data = await scrapePageEvents(url, options);
-        break;
-
       case "scrape_single_event":
         data = await scrapeSingleEvent(url);
         break;
@@ -185,7 +149,7 @@ async function main() {
         console.log(
           JSON.stringify({
             success: false,
-            error: `Unknown action: ${action}`,
+            error: `Unknown action: ${action}. Only "scrape_single_event" is supported.`,
           })
         );
         process.exit(1);

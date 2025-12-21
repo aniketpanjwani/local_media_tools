@@ -1,6 +1,6 @@
 # Local Media Tools
 
-A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources.
+A Claude Code plugin for scraping local events from Instagram and web sources, with support for ad-hoc Facebook event URLs.
 
 ## Quick Start
 
@@ -28,10 +28,9 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 ## Commands
 
 - `/newsletter-events:setup` - Set up or verify environment
-- `/newsletter-events:setup-location` - Configure Facebook location-based discovery
-- `/newsletter-events:research` - Scrape all configured sources
+- `/newsletter-events:research` - Scrape all configured sources (or ad-hoc Facebook event URLs)
 - `/newsletter-events:write` - Generate newsletter from stored events
-- `/newsletter-events:add-source` - Add Instagram, Facebook, or web sources
+- `/newsletter-events:add-source` - Add Instagram or web sources
 - `/newsletter-events:list-sources` - View all configured sources
 - `/newsletter-events:remove-source` - Remove sources from configuration
 
@@ -39,7 +38,7 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 
 This plugin uses two runtimes:
 - **Python** (primary) - ScrapeCreators API, Firecrawl, deduplication
-- **Node.js** (via subprocess) - Facebook event scraping
+- **Node.js** (via subprocess) - Facebook event scraping (ad-hoc URLs only)
 
 ## Directory Structure
 
@@ -104,16 +103,14 @@ sources:
         name: "Local Venue"
         type: "music_venue"
 
-  facebook:
-    pages:
-      - url: "https://facebook.com/venue/events"
-        name: "The Venue"
-
   web_aggregators:
     sources:
       - url: "https://localevents.com"
         name: "Local Events"
         source_type: "listing"
+
+# Facebook events: Pass URLs directly to /research command
+# Example: /research https://facebook.com/events/123456
 ```
 
 ## Output

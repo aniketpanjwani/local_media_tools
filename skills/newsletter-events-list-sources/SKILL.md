@@ -1,6 +1,6 @@
 ---
 name: newsletter-events-list-sources
-description: List all configured event sources (Instagram, Facebook, web aggregators)
+description: List all configured event sources (Instagram, web aggregators)
 ---
 
 <essential_principles>
@@ -13,8 +13,9 @@ All sources are stored in `~/.config/local-media-tools/sources.yaml`.
 | Type | Filter Keyword | Description |
 |------|----------------|-------------|
 | Instagram | `instagram`, `ig` | @handle accounts |
-| Facebook | `facebook`, `fb` | Pages, groups, and locations |
 | Web | `web` | Event aggregator websites |
+
+**Note:** Facebook events are not configured sources. Pass event URLs directly to `/research`.
 
 ## Output Format
 
@@ -27,7 +28,6 @@ What sources do you want to list?
 **Options:**
 - `all` or blank - Show all configured sources
 - `instagram` - Only Instagram accounts
-- `facebook` - Only Facebook pages, groups, locations
 - `web` - Only web aggregators
 
 Provide filter (or press Enter for all):
@@ -47,8 +47,6 @@ filter_map = {
     "all": "all",
     "instagram": "instagram",
     "ig": "instagram",
-    "facebook": "facebook",
-    "fb": "facebook",
     "web": "web",
 }
 
@@ -77,22 +75,13 @@ with open(config_path) as f:
 sources = config.get("sources", {})
 
 instagram_accounts = sources.get("instagram", {}).get("accounts", [])
-facebook_pages = sources.get("facebook", {}).get("pages", [])
-facebook_groups = sources.get("facebook", {}).get("groups", [])
-facebook_locations = sources.get("facebook", {}).get("locations", [])
 web_sources = sources.get("web_aggregators", {}).get("sources", [])
 ```
 
 ## Step 4: Check for Empty State
 
 ```python
-total_sources = (
-    len(instagram_accounts) +
-    len(facebook_pages) +
-    len(facebook_groups) +
-    len(facebook_locations) +
-    len(web_sources)
-)
+total_sources = len(instagram_accounts) + len(web_sources)
 
 if total_sources == 0:
     print("No sources configured.")
@@ -112,24 +101,6 @@ Display each category with appropriate columns:
 | @localvenue | Local Venue | music_venue | Kingston, NY |
 | @themusicbar | The Music Bar | bar | - |
 
-**Facebook Pages:**
-
-| URL | Name |
-|-----|------|
-| facebook.com/thevenue/events | The Venue |
-
-**Facebook Groups:**
-
-| URL | Name |
-|-----|------|
-| facebook.com/groups/localmusic | Local Music |
-
-**Facebook Locations:**
-
-| Location ID | Name | Filter | Max Events |
-|-------------|------|--------|------------|
-| 123456 | Kingston, NY | THIS_WEEK | 100 |
-
 **Web Aggregators:**
 
 | URL | Name | Type | Max Pages |
@@ -141,11 +112,12 @@ Display each category with appropriate columns:
 ```
 Total: N sources configured
 - Instagram: X accounts
-- Facebook: Y pages, Z groups, W locations
-- Web: V aggregators
+- Web: Y aggregators
 
 To add sources: /newsletter-events:add-source @handle
 To remove sources: /newsletter-events:remove-source @handle
+
+Note: For Facebook events, pass URLs directly to /research
 ```
 
 ## Handling Filtered Views
@@ -156,7 +128,6 @@ If a filter was applied but that category is empty:
 No instagram sources found.
 
 You have:
-- 3 Facebook pages
 - 1 web aggregator
 
 To add Instagram accounts: /newsletter-events:add-source @handle

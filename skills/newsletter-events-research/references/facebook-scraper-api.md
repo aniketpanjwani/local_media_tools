@@ -27,10 +27,7 @@ from scripts.facebook_bridge import FacebookBridge, FacebookScraperError
 
 bridge = FacebookBridge(timeout=120)
 
-# Scrape events from a page
-events = bridge.scrape_page_events("https://facebook.com/venue/events")
-
-# Scrape a single event
+# Scrape a single event by URL
 event = bridge.scrape_single_event("https://facebook.com/events/123456")
 ```
 
@@ -63,12 +60,12 @@ Events are normalized to match our Event schema:
 
 ```python
 try:
-    events = bridge.scrape_page_events(url)
+    event = bridge.scrape_single_event(url)
 except FacebookScraperError as e:
     if "timeout" in str(e).lower():
         # Page took too long to load
     elif "not found" in str(e).lower():
-        # Page doesn't exist or is private
+        # Event doesn't exist or is private
     else:
         # Other error
 ```

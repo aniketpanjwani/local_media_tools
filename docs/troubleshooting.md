@@ -8,7 +8,7 @@
 | `uv: command not found` | [Missing uv](#missing-uv) |
 | `API key invalid` | [Invalid API Keys](#invalid-api-keys) |
 | `No events found` | [No Events Found](#no-events-found) |
-| Facebook scraper fails | [Facebook Issues](#facebook-issues) |
+| Facebook event not found | [Facebook Issues](#facebook-issues) |
 | Instagram returns empty | [Instagram Issues](#instagram-issues) |
 
 ---
@@ -67,7 +67,7 @@
 **Possible causes:**
 1. **Source has no upcoming events** - Check the source manually
 2. **Wrong Instagram handle** - Verify handle exists and is public
-3. **Facebook page structure changed** - Facebook scraping can be unreliable
+3. **Facebook event URL invalid** - Check the URL format
 4. **Date filter too restrictive** - Check `filters.date_range` in sources.yaml
 
 **Debug steps:**
@@ -117,42 +117,41 @@
 
 ## Facebook Issues
 
-### Page Scraper Fails
+### Event Not Found
 
-**Symptom:** Facebook page returns error or no events
+**Symptom:** "Event not found or is private"
 
 **Possible causes:**
-1. **Not a public page** - Page must be public with /events section
-2. **HTML structure changed** - Facebook updates break scrapers periodically
-3. **Rate limiting** - Too many requests from same IP
+1. **Private event** - Event must be public (viewable without login)
+2. **Invalid URL** - URL format must be `https://facebook.com/events/{id}`
+3. **Event deleted** - The event may have been removed
 
 **Solution:**
-1. Verify page has events: visit URL manually
-2. Try location-based discovery instead
-3. Wait and retry later
+1. Verify the event is public by visiting URL in an incognito browser
+2. Check the URL is correctly formatted
+3. Try a different event URL
 
-### Location Discovery Fails
+### Scraper Timeout
 
-**Symptom:** `/newsletter-events:setup-location` doesn't work
+**Symptom:** "Scraper timed out after X seconds"
 
-**Prerequisites:**
-- Chrome browser installed
-- Chrome MCP Server running
-- Logged into Facebook in Chrome
+**Possible causes:**
+1. **Rate limiting** - Too many requests from same IP
+2. **Slow connection** - Network issues
+3. **Facebook blocking** - Bot detection
 
-**Debug steps:**
-1. Verify Chrome MCP is configured in Claude Code settings
-2. Log into Facebook in Chrome manually
-3. Navigate to facebook.com/events to verify access
-4. Retry setup-location
+**Solution:**
+1. Wait a few minutes and try again
+2. Check your internet connection
+3. Try fewer Facebook URLs at once
 
-### Events Have Sparse Data
+### Missing Event Data
 
-**Symptom:** Facebook events missing details (venue, time, description)
+**Symptom:** Event scraped but some fields are empty
 
-**Cause:** Location-based discovery captures limited data from the events listing page.
+**Cause:** The event page doesn't have that information (e.g., no ticket URL, no description).
 
-**Solution:** Events are marked for review. Use `/newsletter-events:write` and Claude will handle incomplete data gracefully.
+**Solution:** This is normal - Claude will work with available data when generating newsletters.
 
 ---
 

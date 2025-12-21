@@ -51,34 +51,6 @@ class InstagramConfig(BaseModel):
     priority_handles: list[str] = Field(default_factory=list)
 
 
-class FacebookPage(BaseModel):
-    """Configuration for a Facebook page."""
-
-    url: str
-    name: str
-
-
-class FacebookLocation(BaseModel):
-    """A single Facebook location for event discovery via Chrome MCP."""
-
-    location_id: str = Field(..., description="Facebook location ID (e.g., '111841478834264')")
-    location_name: str = Field(..., description="Human-readable name (e.g., 'Medellín, Antioquia')")
-    date_filter: Literal["THIS_WEEK", "THIS_WEEKEND", "THIS_MONTH"] = "THIS_WEEK"
-    max_events: int = Field(100, ge=1, le=500)
-
-
-class FacebookConfig(BaseModel):
-    """Facebook source configuration."""
-
-    enabled: bool = True
-    pages: list[FacebookPage] = Field(default_factory=list)
-    groups: list[FacebookPage] = Field(default_factory=list)
-    locations: list[FacebookLocation] = Field(
-        default_factory=list,
-        description="Location-based discovery via Chrome MCP (supports multiple cities)",
-    )
-
-
 class EventbriteConfig(BaseModel):
     """Eventbrite source configuration (future)."""
 
@@ -114,9 +86,10 @@ class SourcesConfig(BaseModel):
     """All event sources configuration."""
 
     instagram: InstagramConfig = Field(default_factory=InstagramConfig)
-    facebook: FacebookConfig = Field(default_factory=FacebookConfig)
     eventbrite: EventbriteConfig = Field(default_factory=EventbriteConfig)
     web_aggregators: WebAggregatorConfig = Field(default_factory=WebAggregatorConfig)
+
+    model_config = {"extra": "ignore"}  # Ignore deprecated facebook config
 
 
 class FiltersConfig(BaseModel):

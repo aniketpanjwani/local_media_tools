@@ -1,6 +1,6 @@
 ---
 name: newsletter-events-research
-description: Research events from Instagram and Facebook for local newsletter. Use when scraping event sources, downloading flyer images, or extracting event details.
+description: Research events from Instagram, web aggregators, and Facebook event URLs. Use when scraping event sources, downloading flyer images, or extracting event details.
 ---
 
 <essential_principles>
@@ -11,8 +11,8 @@ This skill gathers raw event data from configured sources. It does NOT write new
 ### Data Sources
 
 1. **Instagram** - Via ScrapeCreators API (requires API key)
-2. **Facebook Pages** - Via facebook-event-scraper npm package (Node.js subprocess)
-3. **Facebook Discover** - Via Chrome MCP (location-based discovery, requires Chrome login)
+2. **Web Aggregators** - Via Firecrawl (requires API key)
+3. **Facebook Events** - Pass event URLs directly (e.g., `https://facebook.com/events/123456`)
 
 ### Output
 
@@ -65,10 +65,13 @@ The CLI tools ensure:
 What would you like to research?
 
 1. **Instagram** - Scrape Instagram accounts for events
-2. **Facebook Pages** - Scrape specific Facebook pages for events
-3. **Facebook Discover** - Discover events by location (requires Chrome MCP + Facebook login)
-4. **Web Aggregators** - Scrape web event aggregator sites
-5. **All sources** - Full research from all configured sources
+2. **Web Aggregators** - Scrape web event aggregator sites
+3. **All configured sources** - Full research from all sources in config
+4. **Facebook event URLs** - Pass specific event URLs to scrape
+
+You can also paste Facebook event URLs directly:
+- `https://facebook.com/events/123456`
+- `https://facebook.com/events/789012`
 
 **Wait for response before proceeding.**
 </intake>
@@ -77,10 +80,9 @@ What would you like to research?
 | Response | Workflow |
 |----------|----------|
 | 1, "instagram", "ig" | `workflows/research-instagram.md` |
-| 2, "facebook pages", "fb pages" | `workflows/research-facebook.md` |
-| 3, "facebook discover", "fb discover", "discover" | `workflows/research-facebook-discover.md` |
-| 4, "web", "aggregator", "websites" | `workflows/research-web-aggregator.md` |
-| 5, "all", "both", "full" | `workflows/research-all.md` |
+| 2, "web", "aggregator", "websites" | `workflows/research-web-aggregator.md` |
+| 3, "all", "both", "full" | `workflows/research-all.md` |
+| 4, "facebook", contains `facebook.com/events/` | `workflows/research-facebook.md` |
 </routing>
 
 <reference_index>
@@ -88,15 +90,13 @@ All domain knowledge in `references/`:
 
 **APIs:** scrapecreators-api.md, facebook-scraper-api.md, firecrawl-api.md
 **Detection:** event-detection.md
-**Setup:** facebook-location-setup.md (for location-based discovery)
 </reference_index>
 
 <workflows_index>
 | Workflow | Purpose |
 |----------|---------|
 | research-instagram.md | Scrape Instagram, download images, extract events |
-| research-facebook.md | Scrape Facebook pages for events |
-| research-facebook-discover.md | Discover events by location via Chrome MCP |
+| research-facebook.md | Scrape individual Facebook event URLs |
 | research-web-aggregator.md | Scrape web event aggregator sites |
 | research-all.md | Run all research workflows |
 </workflows_index>

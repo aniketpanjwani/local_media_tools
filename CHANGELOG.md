@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2025-12-21
+
+### Changed
+- **Breaking:** Facebook events are now ad-hoc only - pass URLs directly to `/research`
+- Removed Facebook page scraping and location-based discovery
+- Removed `/newsletter-events:setup-location` command
+- Removed Chrome MCP dependency for Facebook
+- Simplified config schema (no `facebook:` section in sources.yaml)
+
+### Removed
+- `FacebookConfig`, `FacebookPage`, `FacebookLocation` config classes
+- `scrape_page_events()` method from Facebook bridge
+- Location discovery workflow and references
+- `scripts/facebook_discover.py`
+
+### Migration
+- Existing `facebook:` config in sources.yaml is now ignored (won't break, just unused)
+- To scrape Facebook events: `/research https://facebook.com/events/123456`
+
 ## [0.10.0] - 2025-12-20
 
 ### Added
@@ -73,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.11.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.9.5...v0.10.0
 [0.9.5]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.9.3...v0.9.4

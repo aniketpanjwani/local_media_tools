@@ -18,7 +18,7 @@ The plugin uses two runtimes:
 | Runtime | Purpose | Components |
 |---------|---------|------------|
 | **Python** | Primary | ScrapeCreators API, Firecrawl, SQLite, deduplication |
-| **Node.js** | Secondary | Facebook page scraping (via subprocess) |
+| **Node.js** | Secondary | Facebook event scraping (via subprocess) |
 
 **Why two runtimes?**
 - Python has better data processing libraries (Pydantic, SQLite)
@@ -28,7 +28,7 @@ The plugin uses two runtimes:
 ## Data Flow
 
 ```
-Sources (Instagram, Facebook, Web)
+Sources (Instagram, Web) + Ad-hoc URLs (Facebook)
          ↓
     Scrapers (Python/Node.js)
          ↓
@@ -145,6 +145,7 @@ ScrapeCreators API client:
 
 Python-to-Node.js subprocess bridge:
 - Calls `scripts/scrape_facebook.js` via bun/node
+- Scrapes individual Facebook event URLs (ad-hoc, not configured)
 - Parses JSON output from Node.js
 - Handles subprocess errors gracefully
 

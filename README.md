@@ -2,7 +2,7 @@
 
 ![Research output showing scraped events](assets/research-output.png)
 
-A Claude Code plugin for scraping local events from Instagram, Facebook, and web sources and generating newsletter content in minutes.
+A Claude Code plugin for scraping local events from Instagram and web sources, with support for ad-hoc Facebook event URLs.
 
 **Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
 
@@ -12,7 +12,7 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 
 Create hyper-local event newsletters by aggregating events from:
 - **Instagram** - Public profiles via ScrapeCreators API
-- **Facebook** - Event pages and location-based discovery
+- **Facebook** - Direct event URLs (pass to `/research` command)
 - **Web Aggregators** - Event listing websites via Firecrawl
 
 Events are deduplicated, stored in SQLite, and formatted according to your preferences.
@@ -55,7 +55,7 @@ Then:
 ## Requirements
 
 - Python 3.12+ with [uv](https://docs.astral.sh/uv/)
-- [bun](https://bun.sh/) (for Facebook scraping)
+- [bun](https://bun.sh/) (for Facebook event scraping)
 - [Claude Code](https://claude.com/claude-code)
 - API keys: [ScrapeCreators](https://scrapecreators.com) (Instagram) or [Firecrawl](https://firecrawl.dev) (web)
 

@@ -24,17 +24,23 @@ Set up or verify the plugin environment.
 
 ### /newsletter-events:research
 
-Scrape events from all configured sources.
+Scrape events from all configured sources, plus any ad-hoc Facebook event URLs.
 
 ```
 /newsletter-events:research
 ```
 
+Or with Facebook event URLs:
+
+```
+/newsletter-events:research https://facebook.com/events/123456789
+```
+
 **What it does:**
 - Reads sources from `~/.config/local-media-tools/sources.yaml`
 - Scrapes Instagram profiles via ScrapeCreators API
-- Scrapes Facebook event pages
 - Scrapes web aggregators via Firecrawl
+- Scrapes any Facebook event URLs passed directly
 - Deduplicates venues using fuzzy matching
 - Stores results in SQLite database
 
@@ -73,10 +79,12 @@ Add a new event source interactively.
 ```
 
 **What it does:**
-- Prompts for source type (Instagram, Facebook, Web)
+- Prompts for source type (Instagram or Web)
 - Collects required information
 - Adds to `sources.yaml`
 - Validates configuration
+
+**Note:** Facebook events are not configured here. Pass Facebook event URLs directly to `/research` instead.
 
 ---
 
@@ -104,29 +112,6 @@ Remove a source from configuration.
 - Shows list of configured sources
 - Prompts for source to remove
 - Updates `sources.yaml`
-
----
-
-## Facebook Discovery
-
-### /newsletter-events:setup-location
-
-Configure Facebook location-based event discovery.
-
-```
-/newsletter-events:setup-location
-```
-
-**Prerequisites:**
-- Chrome MCP Server running
-- Facebook logged in via Chrome
-
-**What it does:**
-- Opens Facebook events page in Chrome
-- Helps find your city's location_id
-- Adds location to sources.yaml
-
-See [Facebook Setup: Location Discovery](examples/facebook.md#location-based-discovery) for details.
 
 ---
 

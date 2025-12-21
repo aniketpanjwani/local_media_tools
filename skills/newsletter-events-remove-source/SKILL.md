@@ -1,6 +1,6 @@
 ---
 name: newsletter-events-remove-source
-description: Remove Instagram accounts, Facebook pages, or web aggregators from sources.yaml configuration
+description: Remove Instagram accounts or web aggregators from sources.yaml configuration
 ---
 
 <essential_principles>
@@ -14,9 +14,10 @@ All sources are stored in `~/.config/local-media-tools/sources.yaml`.
 |-------|---------|
 | `@handle` | Instagram account by handle |
 | `handle` (no @) | Instagram account by handle |
-| `facebook.com/page/events` | Facebook page by URL |
 | `https://site.com` | Web aggregator by URL |
 | `"Page Name"` | Any source by name (asks if ambiguous) |
+
+**Note:** Facebook events are not stored in configuration, so there's nothing to remove.
 
 ## Safety Features
 
@@ -32,7 +33,7 @@ What sources do you want to remove?
 **Examples:**
 - `@localvenue` - Remove Instagram account
 - `@venue1 @venue2` - Remove multiple Instagram accounts
-- `https://facebook.com/venue/events` - Remove Facebook page
+- `https://events.com` - Remove web aggregator
 - `"Local Venue"` - Remove by name (any type)
 
 Provide the source(s) to remove:
@@ -47,11 +48,8 @@ Analyze the user's input to extract sources to remove:
 - Starts with `@` → Instagram handle
 - Word that looks like a handle (alphanumeric + underscores) → Instagram handle
 
-**Facebook detection:**
-- Contains `facebook.com` → Facebook page/group
-
 **Web Aggregator detection:**
-- Any other URL (http:// or https://) → Web aggregator
+- Any URL (http:// or https://) → Web aggregator
 
 **Name detection:**
 - Quoted string → Search by name across all types
@@ -85,9 +83,8 @@ def find_matches(identifier: str, config: dict) -> list:
     """
     Match priority:
     1. Exact Instagram handle (case-insensitive)
-    2. Exact Facebook URL (normalized)
-    3. Exact Web URL (normalized)
-    4. Exact name match (any type)
+    2. Exact Web URL (normalized)
+    3. Exact name match (any type)
     """
     matches = []
     normalized = identifier.lower().lstrip("@").strip('"\'')
@@ -97,16 +94,6 @@ def find_matches(identifier: str, config: dict) -> list:
     for account in sources.get("instagram", {}).get("accounts", []):
         if account["handle"].lower() == normalized:
             matches.append({"type": "instagram", "item": account, "match": "handle"})
-
-    # Check Facebook pages
-    for page in sources.get("facebook", {}).get("pages", []):
-        if normalized in page["url"].lower():
-            matches.append({"type": "facebook_page", "item": page, "match": "url"})
-
-    # Check Facebook groups
-    for group in sources.get("facebook", {}).get("groups", []):
-        if normalized in group["url"].lower():
-            matches.append({"type": "facebook_group", "item": group, "match": "url"})
 
     # Check Web aggregators
     for source in sources.get("web_aggregators", {}).get("sources", []):
@@ -118,9 +105,6 @@ def find_matches(identifier: str, config: dict) -> list:
         for account in sources.get("instagram", {}).get("accounts", []):
             if account.get("name", "").lower() == normalized:
                 matches.append({"type": "instagram", "item": account, "match": "name"})
-        for page in sources.get("facebook", {}).get("pages", []):
-            if page.get("name", "").lower() == normalized:
-                matches.append({"type": "facebook_page", "item": page, "match": "name"})
         for source in sources.get("web_aggregators", {}).get("sources", []):
             if source.get("name", "").lower() == normalized:
                 matches.append({"type": "web", "item": source, "match": "name"})
@@ -135,8 +119,7 @@ If an identifier matches multiple sources, ask the user to clarify:
 ```
 Multiple sources match 'venue':
 1. @venue (Instagram) - Local Venue
-2. facebook.com/venue/events (Facebook) - The Venue
-3. https://venue.com (Web) - Venue Events
+2. https://venue.com (Web) - Venue Events
 
 Which one(s) to remove? (Enter numbers separated by commas, or 'all'):
 ```
@@ -150,8 +133,8 @@ About to remove 5 sources:
 - @localvenue (Instagram)
 - @oldbar (Instagram)
 - @closedgallery (Instagram)
-- facebook.com/shutdownvenue/events (Facebook)
 - https://defunctsite.com (Web)
+- https://oldsite.com (Web)
 
 This cannot be undone. Continue? (y/n):
 ```
@@ -182,16 +165,6 @@ for identifier, matches in matched_sources.items():
             config["sources"]["instagram"]["accounts"] = [
                 a for a in config["sources"]["instagram"]["accounts"]
                 if a["handle"].lower() != match["item"]["handle"].lower()
-            ]
-        elif match["type"] == "facebook_page":
-            config["sources"]["facebook"]["pages"] = [
-                p for p in config["sources"]["facebook"]["pages"]
-                if p["url"].lower() != match["item"]["url"].lower()
-            ]
-        elif match["type"] == "facebook_group":
-            config["sources"]["facebook"]["groups"] = [
-                g for g in config["sources"]["facebook"]["groups"]
-                if g["url"].lower() != match["item"]["url"].lower()
             ]
         elif match["type"] == "web":
             config["sources"]["web_aggregators"]["sources"] = [
@@ -255,7 +228,7 @@ Removing sources...
 ✓ Removed @localvenue (Local Venue) from Instagram accounts
 ✓ Removed @oldbar (Old Bar) from Instagram accounts
   Also removed from priority_handles
-✓ Removed facebook.com/closedvenue/events (Closed Venue) from Facebook pages
+✓ Removed https://oldsite.com (Old Site) from web aggregators
 ✗ Not found: @unknownhandle
 
 Summary: 3 removed, 1 not found

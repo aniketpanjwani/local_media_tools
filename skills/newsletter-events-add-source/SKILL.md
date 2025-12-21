@@ -1,6 +1,6 @@
 ---
 name: newsletter-events-add-source
-description: Add Instagram accounts, Facebook pages, or web aggregators to sources.yaml configuration
+description: Add Instagram accounts or web aggregators to sources.yaml configuration
 ---
 
 <essential_principles>
@@ -13,8 +13,9 @@ All sources are stored in `~/.config/local-media-tools/sources.yaml`.
 | Type | Identifier | Example |
 |------|------------|---------|
 | Instagram | @handle or handle | @localvenue, elmamm |
-| Facebook | URL with /events | https://facebook.com/venue/events |
-| Web Aggregator | Any other URL | https://localevents.com |
+| Web Aggregator | Any URL | https://localevents.com |
+
+**Note:** Facebook events are not stored in configuration. Pass event URLs directly to `/research`.
 
 ## Schema Quick Reference
 
@@ -25,12 +26,6 @@ All sources are stored in `~/.config/local-media-tools/sources.yaml`.
   type: "music_venue"       # music_venue, bar, restaurant, gallery, promoter, aggregator
   location: "Kingston, NY"  # Optional
   notes: "Live jazz"        # Optional
-```
-
-**Facebook Page:**
-```yaml
-- url: "https://facebook.com/venue/events"  # Required
-  name: "The Venue"                          # Auto-extracted from URL if omitted
 ```
 
 **Web Aggregator:**
@@ -47,9 +42,10 @@ What sources do you want to add?
 
 **Examples:**
 - `@localvenue @musicbar @artgallery` - Add Instagram accounts
-- `https://facebook.com/thevenue/events` - Add Facebook page
 - `https://hudsonvalleyevents.com` - Add web aggregator
 - `@venue1, @venue2 and https://events.com` - Mix of sources
+
+**Note:** For Facebook events, use `/research https://facebook.com/events/123456` instead.
 
 Provide the source(s):
 </intake>
@@ -65,8 +61,10 @@ Analyze the user's input to extract sources:
 - Known Instagram handle format (alphanumeric + underscores) → Instagram handle
 
 **Facebook detection:**
-- Contains `facebook.com` → Facebook page
-- If URL doesn't end with `/events`, append it
+- Contains `facebook.com/events/` → Show message:
+  "Facebook events are not stored in configuration. Pass the URL directly to /research instead:
+   /research https://facebook.com/events/123456"
+  Continue processing other sources.
 
 **Web Aggregator detection:**
 - Any other URL (http:// or https://) → Web aggregator
@@ -99,9 +97,6 @@ For each source, check if it already exists:
 # Instagram
 existing_handles = {a["handle"].lower() for a in config["sources"]["instagram"]["accounts"]}
 
-# Facebook
-existing_fb_urls = {p["url"].lower() for p in config["sources"]["facebook"]["pages"]}
-
 # Web
 existing_web_urls = {s["url"].lower() for s in config["sources"]["web_aggregators"]["sources"]}
 ```
@@ -118,17 +113,6 @@ new_account = {
     "type": "venue",  # Default
 }
 config["sources"]["instagram"]["accounts"].append(new_account)
-```
-
-**Facebook:**
-```python
-# Extract name from URL path
-path = url.split("facebook.com/")[1].split("/")[0]
-new_page = {
-    "url": url if url.endswith("/events") else f"{url.rstrip('/')}/events",
-    "name": path.replace("_", " ").replace("-", " ").title(),
-}
-config["sources"]["facebook"]["pages"].append(new_page)
 ```
 
 **Web Aggregator:**
@@ -183,7 +167,7 @@ Display a summary table:
 |------|--------|------|--------|
 | Instagram | @localvenue | Local Venue | Added |
 | Instagram | @musicbar | Music Bar | Already exists |
-| Facebook | facebook.com/thevenue/events | The Venue | Added |
+| Web | hudsonvalleyevents.com | Hudson Valley Events | Added |
 
 **Footer:**
 ```

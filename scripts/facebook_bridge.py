@@ -98,37 +98,6 @@ class FacebookBridge:
                 "bun not found. Please install bun: https://bun.sh"
             )
 
-    def scrape_page_events(
-        self, url: str, limit: int = 20
-    ) -> list[dict[str, Any]]:
-        """
-        Scrape all events from a Facebook page.
-
-        Args:
-            url: Facebook page events URL (e.g., https://facebook.com/venue/events)
-            limit: Maximum number of events to scrape
-
-        Returns:
-            List of event dictionaries matching the Event schema
-
-        Raises:
-            FacebookScraperError: If scraping fails
-        """
-        logger.info("facebook_scrape_page_start", url=url, limit=limit)
-
-        response = self._call_scraper(
-            {
-                "action": "scrape_page_events",
-                "url": url,
-                "options": {"limit": limit},
-            }
-        )
-
-        events = response.get("data", [])
-        logger.info("facebook_scrape_page_complete", url=url, event_count=len(events))
-
-        return events
-
     def scrape_single_event(self, url: str) -> dict[str, Any]:
         """
         Scrape a single Facebook event.

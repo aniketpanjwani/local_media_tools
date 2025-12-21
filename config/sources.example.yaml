@@ -81,32 +81,10 @@ sources:
 
   # --------------------------------------------------------------------------
   # FACEBOOK
-  # Scrapes Facebook event pages and location-based event discovery.
-  # Pages: Uses Node.js subprocess (facebook-event-scraper)
-  # Locations: Requires Chrome MCP + Facebook login in Chrome
+  # Facebook events are not configured here. Instead, pass event URLs directly
+  # to the /research command or during the research skill conversation.
+  # Example: /research https://facebook.com/events/123456
   # --------------------------------------------------------------------------
-  facebook:
-    enabled: true
-
-    # Facebook pages with /events URLs
-    pages:
-      - url: "https://facebook.com/localvenue/events"
-        name: "Local Venue"
-      # - url: "https://facebook.com/anothervenue/events"
-      #   name: "Another Venue"
-
-    # Facebook groups (may require auth)
-    groups: []
-
-    # Location-based discovery (requires Chrome MCP + Facebook login)
-    # Run /setup-location to find your city's location_id
-    # Note: Claude will open the browser and ask you to scroll to load events
-    locations: []
-    # Example:
-    # locations:
-    #   - location_id: "111841478834264"        # Facebook location ID
-    #     location_name: "Medellín, Antioquia"  # Human-readable name
-    #     date_filter: "THIS_WEEK"              # THIS_WEEK, THIS_WEEKEND, THIS_MONTH
 
   # --------------------------------------------------------------------------
   # WEB AGGREGATORS

@@ -113,12 +113,6 @@ sources:
         type: "music_venue"
         location: "Kingston, NY"
 
-  facebook:
-    enabled: true
-    pages:
-      - url: "https://facebook.com/venue/events"
-        name: "The Venue"
-
   web_aggregators:
     enabled: true
     sources:
@@ -127,9 +121,15 @@ sources:
         source_type: "listing"
 ```
 
+**Facebook Events:** Not configured in sources.yaml. Pass Facebook event URLs directly to the research command:
+
+```
+/newsletter-events:research https://facebook.com/events/123456789
+```
+
 See platform-specific guides for detailed configuration:
 - [Instagram Setup](examples/instagram.md)
-- [Facebook Setup](examples/facebook.md)
+- [Facebook Events](examples/facebook.md)
 - [Web Aggregators](examples/web-aggregator.md)
 
 ### Filters

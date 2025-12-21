@@ -2,8 +2,6 @@
 
 from config.config_schema import (
     AppConfig,
-    FacebookConfig,
-    FacebookPage,
     InstagramAccount,
     InstagramConfig,
     NewsletterConfig,
@@ -13,8 +11,6 @@ from config.config_schema import (
 
 __all__ = [
     "AppConfig",
-    "FacebookConfig",
-    "FacebookPage",
     "InstagramAccount",
     "InstagramConfig",
     "NewsletterConfig",
