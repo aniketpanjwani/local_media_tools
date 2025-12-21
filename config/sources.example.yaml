@@ -137,6 +137,21 @@ sources:
     #   source_type: "venue"
     #   extraction_hints: "Events are in table rows with date, artist, and time columns"
     #
+    # Site with auto-discovered profile (created by /add-source):
+    # - url: "https://www.iloveny.com/events/"
+    #   name: "I Love NY"
+    #   source_type: "listing"
+    #   max_pages: 50
+    #   profile:
+    #     discovery_method: "crawl"          # map failed, use crawl instead
+    #     crawl_depth: 2
+    #     event_url_regex: "/event/[^/]+/\\d+/?$"  # Learned from examples
+    #     sample_event_urls:
+    #       - "/event/a-frosty-fest/76214/"
+    #       - "/event/lumina-a-magical-light-experience/76396/"
+    #     notes: "Statewide coverage. Events have numeric IDs."
+    #     profiled_at: "2025-01-15T10:30:00"
+    #
     # To manually refresh an event page after it's been scraped:
     #   /newsletter-events:update-event https://hvmag.com/events/jazz-night
 

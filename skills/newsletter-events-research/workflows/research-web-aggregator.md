@@ -24,7 +24,7 @@ if not sources:
 
 ## Step 2: Discover and Filter URLs
 
-For each aggregator, discover event page URLs and filter out already-scraped URLs.
+For each aggregator, use its stored profile to discover event page URLs efficiently.
 
 ```python
 from scripts.scrape_firecrawl import FirecrawlClient, FirecrawlError
@@ -32,6 +32,7 @@ from scripts.url_utils import normalize_url
 from schemas.sqlite_storage import SqliteStorage
 from datetime import date
 import json
+import re
 
 client = FirecrawlClient()
 db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
@@ -39,12 +40,36 @@ storage = SqliteStorage(db_path)
 
 for source in sources:
     try:
-        # 1. Discover event page URLs
-        discovered_urls = client.discover_event_urls(
-            url=source.url,
-            max_pages=source.max_pages,
-            event_url_pattern=source.event_url_pattern,
-        )
+        profile = source.profile  # May be None for legacy configs
+
+        # 1. Discover event page URLs using profile-guided strategy
+        if profile and profile.discovery_method == "crawl":
+            # Use crawl with stored parameters (profile says map failed for this site)
+            print(f"ℹ {source.name}: Using crawl (per profile)")
+            crawl_result = client.app.crawl_url(
+                source.url,
+                limit=source.max_pages,
+                max_discovery_depth=profile.crawl_depth,
+                scrape_options={"formats": ["links"]}
+            )
+            all_links = []
+            for page in crawl_result.get("data", []):
+                all_links.extend(page.get("links", []))
+
+            # Filter using learned regex from profile (or user override)
+            pattern = source.event_url_pattern or profile.event_url_regex
+            if pattern:
+                discovered_urls = [u for u in all_links if re.search(pattern, u)]
+            else:
+                # Fallback to default patterns
+                discovered_urls = client._filter_event_urls(all_links, None)
+        else:
+            # Default: use map (fast path, works for most sites)
+            discovered_urls = client.discover_event_urls(
+                url=source.url,
+                max_pages=source.max_pages,
+                event_url_pattern=source.event_url_pattern,
+            )
 
         # 2. Normalize discovered URLs
         # Map normalized -> original for scraping

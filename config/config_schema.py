@@ -58,6 +58,42 @@ class EventbriteConfig(BaseModel):
     organizers: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class WebAggregatorProfile(BaseModel):
+    """Auto-discovered scraping configuration for a web source.
+
+    Created during /add-source when Claude probes the site to determine
+    the optimal scraping strategy. Stored in sources.yaml and used by
+    /research to avoid re-discovering on every run.
+    """
+
+    discovery_method: Literal["map", "crawl"] = Field(
+        "map",
+        description="Whether to use Firecrawl map (fast) or crawl (thorough)",
+    )
+    crawl_depth: int = Field(
+        2,
+        ge=1,
+        le=5,
+        description="Max discovery depth when using crawl method",
+    )
+    event_url_regex: str | None = Field(
+        None,
+        description="Regex pattern learned from sample URLs (e.g., r'/event/[^/]+/\\d+/')",
+    )
+    sample_event_urls: list[str] = Field(
+        default_factory=list,
+        description="Example URLs discovered during profiling (for validation)",
+    )
+    notes: str | None = Field(
+        None,
+        description="Claude's observations about this source structure",
+    )
+    profiled_at: str | None = Field(
+        None,
+        description="ISO timestamp when profile was created",
+    )
+
+
 class WebAggregatorSource(BaseModel):
     """Configuration for a web aggregator source."""
 
@@ -66,12 +102,16 @@ class WebAggregatorSource(BaseModel):
     source_type: Literal["calendar", "listing", "venue"] = "listing"
     event_url_pattern: str | None = Field(
         None,
-        description="Glob pattern to filter event URLs (e.g., '/events/*')",
+        description="User override: glob pattern to filter event URLs (takes precedence over profile)",
     )
     max_pages: int = Field(50, ge=1, le=200)
     extraction_hints: str | None = Field(
         None,
         description="Hints for LLM extraction (e.g., 'Events are in cards with .event-item class')",
+    )
+    profile: WebAggregatorProfile | None = Field(
+        None,
+        description="Auto-discovered scraping profile (created by /add-source)",
     )
 
 

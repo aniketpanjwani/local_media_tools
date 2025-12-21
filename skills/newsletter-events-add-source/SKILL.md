@@ -34,6 +34,11 @@ All sources are stored in `~/.config/local-media-tools/sources.yaml`.
   name: "Local Events"            # Auto-extracted from domain if omitted
   source_type: "listing"          # listing, calendar, or venue
   max_pages: 50                   # 1-200
+  profile:                        # Auto-discovered by Claude during add
+    discovery_method: "crawl"     # map or crawl
+    event_url_regex: "/event/[^/]+/\\d+/"
+    sample_event_urls: [...]
+    profiled_at: "2025-01-15T..."
 ```
 </essential_principles>
 
@@ -125,7 +130,129 @@ new_source = {
     "source_type": "listing",
     "max_pages": 50,
 }
+# Don't append yet - profile first in Step 4b
+```
+
+## Step 4b: Profile Web Aggregator (Required for Web Sources)
+
+For each new web aggregator, probe the site to discover optimal scraping strategy.
+This runs once at add time so /research doesn't need to re-discover every run.
+
+### 4b.1: Try Map First (Fast, Cheap)
+```python
+from scripts.scrape_firecrawl import FirecrawlClient
+import re
+
+client = FirecrawlClient()
+
+print(f"Profiling {url}...")
+map_result = client.app.map_url(url)
+map_urls = map_result.get("links", [])
+
+# Filter to likely event URLs
+event_patterns = r"/events?/|/calendar/|/shows?/|/event/"
+event_urls = [u for u in map_urls if re.search(event_patterns, u, re.I)]
+discovery_method = "map"
+```
+
+### 4b.2: If Map Fails, Try Crawl
+```python
+MIN_URLS_THRESHOLD = 5
+
+if len(event_urls) < MIN_URLS_THRESHOLD:
+    print(f"  Map found only {len(event_urls)} URLs, trying crawl...")
+
+    crawl_result = client.app.crawl_url(
+        url,
+        limit=30,
+        max_discovery_depth=2,
+        scrape_options={"formats": ["links"]}
+    )
+
+    all_links = []
+    for page in crawl_result.get("data", []):
+        all_links.extend(page.get("links", []))
+
+    event_urls = [u for u in all_links if re.search(event_patterns, u, re.I)]
+    discovery_method = "crawl"
+
+    print(f"  Crawl found {len(event_urls)} event URLs")
+```
+
+### 4b.3: Learn URL Pattern from Examples
+
+Analyze discovered URLs to find the common pattern:
+
+```python
+from urllib.parse import urlparse
+from collections import Counter
+
+# Extract path patterns
+paths = [urlparse(u).path for u in event_urls[:20]]
+
+# Claude analyzes paths and generates regex
+# Examples:
+#   /events/jazz-night         → r"/events/[^/]+$"
+#   /event/a-frosty-fest/76214 → r"/event/[^/]+/\d+/?$"
+#   /calendar/2025/01/15/show  → r"/calendar/\d{4}/\d{2}/\d{2}/[^/]+$"
+
+# Present findings to user
+```
+
+### 4b.4: Present Profile for Confirmation
+
+```
+Profiling: I Love NY (https://www.iloveny.com/events/)
+
+Discovery method: crawl (map found 0, crawl found 80)
+Learned pattern:  /event/{slug}/{id}/
+Regex:            r"/event/[^/]+/\d+/?$"
+
+Sample events discovered:
+  /event/a-frosty-fest/76214/
+  /event/lumina-a-magical-light-experience/76396/
+  /event/ice-at-canalside/76576/
+
+Notes: Statewide coverage. Events have numeric IDs.
+
+Save this profile? (Y/n)
+```
+
+### 4b.5: Store Profile in Source Config
+
+```python
+from datetime import datetime
+
+new_source["profile"] = {
+    "discovery_method": discovery_method,
+    "crawl_depth": 2,
+    "event_url_regex": learned_regex,  # e.g., r"/event/[^/]+/\d+/?$"
+    "sample_event_urls": event_urls[:5],
+    "notes": f"Discovered {len(event_urls)} event URLs. {additional_notes}",
+    "profiled_at": datetime.now().isoformat(),
+}
+
 config["sources"]["web_aggregators"]["sources"].append(new_source)
+```
+
+### 4b.6: Handle Profiling Failures
+
+If both map and crawl find zero event URLs:
+
+```
+Could not discover event URLs on this site.
+
+Possible reasons:
+- Site requires JavaScript that Firecrawl couldn't render
+- Events are loaded via API calls
+- Non-standard URL structure
+
+Options:
+1. Add anyway (you can manually set event_url_pattern later)
+2. Skip this source
+3. Provide a custom event_url_pattern now
+
+Choose (1-3):
 ```
 
 ## Step 5: Backup Original Config
@@ -181,8 +308,10 @@ Run /newsletter-events:research to scrape these sources.
 <success_criteria>
 - [ ] All sources parsed from input
 - [ ] Duplicates identified and skipped
+- [ ] Web aggregators profiled (map/crawl discovery, URL pattern learned)
+- [ ] Profile confirmed by user before saving
 - [ ] Config backed up before modification
-- [ ] New sources appended to correct sections
+- [ ] New sources appended to correct sections (with profile for web sources)
 - [ ] Config validates after save
 - [ ] Clear summary table shown to user
 </success_criteria>
