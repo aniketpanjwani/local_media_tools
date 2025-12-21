@@ -61,7 +61,8 @@ formatting_preferences: |
 # Detailed with links
 formatting_preferences: |
   Format: **Title** @ Venue | Time | Price
-  Include [Get Tickets](url) links when available.
+  Include [Get Tickets](ticket_url) links when available.
+  Include [Source](source_url) for attribution.
   Use emojis for categories.
 
 # By category
@@ -70,6 +71,33 @@ formatting_preferences: |
   Within each category, sort by date.
   Use bullet points with essentials only.
 ```
+
+### Available Fields for Formatting
+
+When writing `formatting_preferences`, you can reference these fields:
+
+| Field | Description | Example Value |
+|-------|-------------|---------------|
+| `title` | Event name | "Jazz Night" |
+| `venue` | Venue name | "The Blue Note" |
+| `venue_city` | Venue city | "Kingston" |
+| `date` | ISO date | "2025-01-20" |
+| `day_of_week` | Full day name | "Saturday" |
+| `formatted_date` | Human-readable | "January 20" |
+| `time` | Start time | "8:00 PM" |
+| `description` | Event description | "Live jazz trio..." |
+| `category` | Category | "music", "art", "food_drink" |
+| `price` | Price or "Free" | "$15" |
+| `ticket_url` | Buy tickets link | URL or empty |
+| `event_url` | Event page link | URL or empty |
+| `source_url` | Original source | Instagram post, Facebook event, or web page URL |
+
+**About `source_url`:** This is where the event was originally found:
+- **Instagram** → the Instagram post URL
+- **Facebook** → the Facebook event page URL
+- **Web aggregators** → the scraped page URL
+
+Use it for attribution: `Include [Source](source_url) for each event.`
 
 ### Adding Sources
 

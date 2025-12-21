@@ -86,7 +86,39 @@ for event in events:
         "price": event.price or ("Free" if event.is_free else None),
         "ticket_url": event.ticket_url,
         "event_url": event.event_url,
+        "source_url": event.source_url,
     })
+```
+
+### Available Fields Reference
+
+When generating the newsletter, these fields are available for each event:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `title` | Event name | "Jazz Night" |
+| `venue` | Venue name | "The Blue Note" |
+| `venue_city` | Venue city | "Kingston" |
+| `date` | ISO date | "2025-01-20" |
+| `day_of_week` | Full day name | "Saturday" |
+| `formatted_date` | Human-readable date | "January 20" |
+| `time` | Start time | "8:00 PM" |
+| `description` | Event description | "Live jazz trio..." |
+| `category` | Event category | "music", "art", "food_drink" |
+| `price` | Price or "Free" | "$15" or "Free" |
+| `ticket_url` | Link to buy tickets | URL or null |
+| `event_url` | Link to event page | URL or null |
+| `source_url` | Where event was found | Instagram post, Facebook event, or web page URL |
+
+**Note:** `source_url` is the original source where the event was discovered:
+- Instagram events → the Instagram post URL
+- Facebook events → the Facebook event page URL
+- Web aggregator events → the scraped page URL
+
+Users can request source attribution in their `formatting_preferences`, e.g.:
+```yaml
+formatting_preferences: |
+  Include [Source](source_url) link for each event.
 ```
 
 ## Step 4: Generate Markdown

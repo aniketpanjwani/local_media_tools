@@ -11,13 +11,19 @@ newsletter:
   # Formatting preferences for /write command
   # Describe in plain English how you want your newsletter formatted.
   # Claude will interpret these instructions when generating markdown.
+  #
+  # Available fields: title, venue, venue_city, date, day_of_week, formatted_date,
+  #   time, description, category, price, ticket_url, event_url, source_url
+  #
+  # source_url = where the event was found (Instagram post, Facebook event, etc.)
   formatting_preferences: |
     Organize events by date with each day as a section header.
     Format dates like "Saturday, January 20".
     For each event, show: **Title** @ Venue | Time | Price
     Use emojis for categories: 🎵 music, 🎨 art, 🍴 food, 🎭 theater.
     Keep descriptions to 1-2 sentences max.
-    Include [Get Tickets](url) links when available.
+    Include [Get Tickets](ticket_url) links when available.
+    Include [Source](source_url) for attribution.
 
   # Alternative formatting examples:
   #
@@ -25,6 +31,11 @@ newsletter:
   # formatting_preferences: |
   #   Organize by date. Simple formatting, no emojis.
   #   Just event name, venue, and time.
+  #
+  # With source attribution:
+  # formatting_preferences: |
+  #   Format: **Title** @ Venue | Time
+  #   Add [See post](source_url) link after each event.
   #
   # By category:
   # formatting_preferences: |
