@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.2] - 2025-12-21
+
+### Fixed
+- **Root cause found**: `commands/add-source.md` was being loaded instead of skill file
+- Updated command file with full profiling workflow (was missing entirely)
+- Command now includes `<critical>` block requiring Firecrawl profiling for web sources
+
 ## [0.14.1] - 2025-12-21
 
 ### Fixed
@@ -154,6 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.14.2]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.12.0...v0.13.0
