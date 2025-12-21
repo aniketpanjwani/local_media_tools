@@ -131,45 +131,30 @@ new_source = {
 
 ### 4c: Profile with Firecrawl (MANDATORY)
 
-**Try map first:**
-```python
-from scripts.scrape_firecrawl import FirecrawlClient
-import re
+<critical>
+RUN THE PROFILER CLI FROM THE PLUGIN DIRECTORY.
 
-client = FirecrawlClient()
+The plugin includes a CLI tool for profiling. Run it using:
 
-print(f"Profiling {url}...")
-map_result = client.app.map_url(url)
-all_urls = map_result.get("links", [])
-
-event_patterns = r"/events?/|/calendar/|/shows?/|/event/|/performances?/"
-event_urls = [u for u in all_urls if re.search(event_patterns, u, re.I)]
-discovery_method = "map"
-
-print(f"  Map found {len(event_urls)} event URLs")
+```bash
+cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py "{url}"
 ```
 
-**If map finds < 5 URLs, try crawl:**
-```python
-if len(event_urls) < 5:
-    print(f"  Trying crawl (map found too few)...")
+This returns JSON with discovery_method, event_urls, and suggested regex pattern.
+DO NOT try to import Python modules directly - use the CLI tool.
+</critical>
 
-    crawl_result = client.app.crawl_url(
-        url,
-        limit=30,
-        max_discovery_depth=2,
-        scrape_options={"formats": ["links"]}
-    )
-
-    all_links = []
-    for page in crawl_result.get("data", []):
-        all_links.extend(page.get("links", []))
-
-    event_urls = [u for u in all_links if re.search(event_patterns, u, re.I)]
-    discovery_method = "crawl"
-
-    print(f"  Crawl found {len(event_urls)} event URLs")
+**Run the profiler:**
+```bash
+cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py "{url}"
 ```
+
+The profiler will:
+1. Try `map_url()` first (fast sitemap/link discovery)
+2. Fall back to `crawl_url()` if map finds < 5 event URLs
+3. Filter URLs matching `/events?/`, `/calendar/`, `/shows?/`, etc.
+4. Suggest a regex pattern based on discovered URLs
+5. Output JSON with the profile data
 
 ### 4d: Learn URL Pattern
 

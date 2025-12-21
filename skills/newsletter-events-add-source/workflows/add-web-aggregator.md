@@ -78,71 +78,46 @@ new_source = {
 <critical>
 DO NOT SKIP THIS STEP.
 Every web aggregator MUST be profiled before saving.
+
+RUN THE PROFILER CLI FROM THE PLUGIN DIRECTORY.
+DO NOT try to import Python modules directly.
 </critical>
 
-### 3a: Probe with Map (Fast)
+### 3a: Run the Profiler CLI
 
-```python
-from scripts.scrape_firecrawl import FirecrawlClient
-import re
+The plugin includes a CLI tool for profiling. Run it:
 
-client = FirecrawlClient()
-
-print(f"Profiling {url}...")
-print("  Trying map_url (fast discovery)...")
-
-map_result = client.app.map_url(url)
-all_urls = map_result.get("links", [])
-
-# Filter to likely event URLs
-event_patterns = r"/events?/|/calendar/|/shows?/|/event/|/performances?/"
-event_urls = [u for u in all_urls if re.search(event_patterns, u, re.I)]
-
-discovery_method = "map"
-print(f"  Map found {len(event_urls)} event URLs")
+```bash
+cd $CLAUDE_PLUGIN_ROOT && uv run python scripts/profile_source.py "{url}"
 ```
 
-### 3b: Crawl Fallback (If Map Fails)
+This will:
+1. Try `map_url()` first (fast sitemap/link discovery)
+2. Fall back to `crawl_url()` if map finds < 5 event URLs
+3. Filter URLs matching `/events?/`, `/calendar/`, `/shows?/`, etc.
+4. Suggest a regex pattern based on discovered URLs
+5. Output JSON with the profile data
 
-```python
-MIN_URLS_THRESHOLD = 5
-
-if len(event_urls) < MIN_URLS_THRESHOLD:
-    print(f"  Map found too few URLs, trying crawl...")
-
-    crawl_result = client.app.crawl_url(
-        url,
-        limit=30,
-        max_discovery_depth=2,
-        scrape_options={"formats": ["links"]}
-    )
-
-    all_links = []
-    for page in crawl_result.get("data", []):
-        all_links.extend(page.get("links", []))
-
-    event_urls = [u for u in all_links if re.search(event_patterns, u, re.I)]
-    discovery_method = "crawl"
-
-    print(f"  Crawl found {len(event_urls)} event URLs")
+Example output:
+```json
+{
+  "success": true,
+  "url": "https://example.com",
+  "discovery_method": "map",
+  "event_urls_count": 25,
+  "event_urls": ["https://example.com/events/jazz-night", ...],
+  "suggested_regex": "/events/[^/]+/?$",
+  "notes": "Discovered 25 event URLs using map."
+}
 ```
 
-### 3c: Learn URL Pattern
+### 3b: Parse Profiler Output
 
-Analyze discovered URLs to find the common pattern:
-
-```python
-from urllib.parse import urlparse
-
-# Extract paths from discovered URLs
-paths = [urlparse(u).path for u in event_urls[:20]]
-
-# Claude analyzes paths and generates appropriate regex
-# Examples:
-#   /events/jazz-night           → r"/events/[^/]+$"
-#   /event/a-frosty-fest/76214   → r"/event/[^/]+/\d+/?$"
-#   /calendar/2025/01/15/show    → r"/calendar/\d{4}/\d{2}/\d{2}/[^/]+$"
-```
+Extract the key fields from the JSON output:
+- `discovery_method`: "map" or "crawl"
+- `event_urls`: Sample URLs for validation
+- `suggested_regex`: Pattern to match event URLs
+- `event_urls_count`: Total found
 
 ### 3d: Present Profile for Confirmation
 

@@ -62,8 +62,17 @@ class FirecrawlClient:
         logger.info("mapping_site", url=url)
 
         try:
-            map_result = self.app.map_url(url)
-            all_urls = map_result.get("links", [])
+            map_result = self.app.map(url)
+            # map returns a MapData object with 'links' attribute containing LinkResult objects
+            all_urls = []
+            if hasattr(map_result, "links"):
+                for link in map_result.links:
+                    if hasattr(link, "url"):
+                        all_urls.append(link.url)
+                    elif isinstance(link, str):
+                        all_urls.append(link)
+            elif isinstance(map_result, list):
+                all_urls = [u.url if hasattr(u, "url") else u for u in map_result]
             logger.info("mapped_site", url_count=len(all_urls))
         except Exception as e:
             logger.error("map_failed", url=url, error=str(e))
@@ -93,12 +102,19 @@ class FirecrawlClient:
         for url in urls:
             try:
                 logger.info("scraping_page", url=url)
-                page = self.app.scrape_url(url, params={"formats": ["markdown"]})
+                page = self.app.scrape(url, formats=["markdown"])
+                # Handle ScrapeData object or dict response
+                if hasattr(page, "markdown"):
+                    markdown = page.markdown or ""
+                    metadata = page.metadata if hasattr(page, "metadata") else {}
+                else:
+                    markdown = page.get("markdown", "")
+                    metadata = page.get("metadata", {})
                 results.append(
                     {
                         "url": url,
-                        "markdown": page.get("markdown", ""),
-                        "metadata": page.get("metadata", {}),
+                        "markdown": markdown,
+                        "metadata": metadata,
                     }
                 )
             except Exception as e:
