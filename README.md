@@ -6,6 +6,8 @@ A Claude Code plugin for scraping local events from Instagram, Facebook, and web
 
 **Created by [Aniket Panjwani](https://www.youtube.com/@aniketapanjwani)**
 
+> 💡 **Non-technical?** [Book a consultation](https://tidycal.com/aniketpanjwani/local-media-tools-consultation) for guided setup. You'll leave ready to scrape events from any Instagram profile or webpage yourself.
+
 ## What It Does
 
 Create hyper-local event newsletters by aggregating events from:
