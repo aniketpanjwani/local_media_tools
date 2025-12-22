@@ -46,9 +46,9 @@ for page in pages:
 
 ## How It Works
 
-1. `app.map_url()` - Discovers all URLs on the site
+1. `app.map()` - Discovers all URLs on the site
 2. Filter - Removes non-event URLs (about, contact, assets)
-3. `app.scrape_url()` - Gets markdown content from each page
+3. `app.scrape()` - Gets markdown content from each page
 4. **Claude** - Extracts events from the markdown
 
 ## Error Handling
@@ -65,19 +65,19 @@ Firecrawl has built-in rate limiting. The SDK handles this automatically.
 
 Firecrawl includes "smart wait" by default, but some sites (like Eventbrite) need extra time for JavaScript to render.
 
-### The `waitFor` Parameter
+### The `wait_for` Parameter
 
 Add extra delay before scraping:
 
 ```python
 # For scraping with link discovery
-result = app.scrape_url(url, params={
-    "formats": ["links"],
-    "waitFor": 3000  # Wait 3 seconds for JS
-})
+result = app.scrape(url,
+    formats=["links"],
+    wait_for=3000  # Wait 3 seconds for JS
+)
 
 # For crawling
-result = app.crawl(url, scrape_options={"waitFor": 3000})
+result = app.crawl(url, scrape_options={"wait_for": 3000})
 ```
 
 **When to use:**
@@ -87,17 +87,17 @@ result = app.crawl(url, scrape_options={"waitFor": 3000})
 
 ### Link Discovery Pattern
 
-For JS-heavy sites, use `scrape_url` with `formats: ["links"]` instead of `map()`:
+For JS-heavy sites, use `scrape()` with `formats=["links"]` instead of `map()`:
 
 ```python
 # map() often fails on JS sites
 map_result = app.map(url)  # Returns 0 links for Eventbrite
 
-# scrape with waitFor + links format works
-scrape_result = app.scrape_url(url, params={
-    "formats": ["links"],
-    "waitFor": 3000
-})
+# scrape with wait_for + links format works
+scrape_result = app.scrape(url,
+    formats=["links"],
+    wait_for=3000
+)
 links = scrape_result.links  # Returns 60+ links for Eventbrite
 ```
 
@@ -106,14 +106,16 @@ links = scrape_result.links  # Returns 60+ links for Eventbrite
 For sites requiring user interaction (infinite scroll, click to load):
 
 ```python
-result = app.scrape_url(url, params={
-    "actions": [
-        {"type": "wait", "milliseconds": 2000},
-        {"type": "scroll", "direction": "down"},
-        {"type": "wait", "milliseconds": 1000},
+from firecrawl.v2.types import WaitAction, ScrollAction
+
+result = app.scrape(url,
+    actions=[
+        WaitAction(type="wait", milliseconds=2000),
+        ScrollAction(type="scroll", direction="down"),
+        WaitAction(type="wait", milliseconds=1000),
     ],
-    "formats": ["links"]
-})
+    formats=["links"]
+)
 ```
 
 **Supported actions:** `wait`, `click`, `scroll`, `write`, `press`, `executeJavascript`

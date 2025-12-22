@@ -159,21 +159,19 @@ def profile_source(url: str) -> dict:
         event_urls = []
         discovery_method = "map"
 
-    # Fallback 1: Try scrape with waitFor for JavaScript-heavy sites
+    # Fallback 1: Try scrape with wait_for for JavaScript-heavy sites
     if len(event_urls) < MIN_URLS_THRESHOLD:
         print(
-            f"  Map found too few URLs ({len(event_urls)}), trying scrape with waitFor...",
+            f"  Map found too few URLs ({len(event_urls)}), trying scrape with wait_for...",
             file=sys.stderr,
         )
 
         try:
-            # Use scrape with waitFor and links format for JS-heavy sites
-            scrape_result = app.scrape_url(
+            # Use scrape with wait_for and links format for JS-heavy sites
+            scrape_result = app.scrape(
                 url,
-                params={
-                    "formats": ["links"],
-                    "waitFor": DEFAULT_WAIT_FOR_MS,
-                }
+                formats=["links"],
+                wait_for=DEFAULT_WAIT_FOR_MS,
             )
 
             # Extract links from scrape result
@@ -186,11 +184,11 @@ def profile_source(url: str) -> dict:
             event_urls = filter_event_urls(all_links)
             discovery_method = "map"  # Still use "map" in schema (scrape is just the technique)
             print(
-                f"  Scrape with waitFor found {len(all_links)} total, {len(event_urls)} event URLs",
+                f"  Scrape with wait_for found {len(all_links)} total, {len(event_urls)} event URLs",
                 file=sys.stderr,
             )
         except Exception as e:
-            print(f"  Scrape with waitFor failed: {e}", file=sys.stderr)
+            print(f"  Scrape with wait_for failed: {e}", file=sys.stderr)
 
     # Fallback 2: Try crawl if scrape also found too few
     if len(event_urls) < MIN_URLS_THRESHOLD:
@@ -229,7 +227,7 @@ def profile_source(url: str) -> dict:
     if discovery_method == "crawl":
         notes = f"Discovered {len(event_urls)} event URLs using crawl (map and scrape found too few)."
     elif len(event_urls) >= MIN_URLS_THRESHOLD:
-        notes = f"Discovered {len(event_urls)} event URLs using map/scrape with waitFor."
+        notes = f"Discovered {len(event_urls)} event URLs using map/scrape with wait_for."
     else:
         notes = f"Found only {len(event_urls)} event URLs. May need manual profiling."
 

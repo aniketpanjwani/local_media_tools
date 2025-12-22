@@ -155,7 +155,7 @@ Wait for user confirmation.
 
 The profiler now automatically tries multiple strategies:
 1. `map()` - Fast sitemap/link discovery
-2. `scrape_url()` with `waitFor: 3000` and `formats: ["links"]` - For JavaScript-heavy sites
+2. `scrape()` with `wait_for=3000` and `formats=["links"]` - For JavaScript-heavy sites
 3. `crawl()` - Thorough multi-page crawl
 
 If ALL strategies find zero event URLs:
@@ -165,7 +165,7 @@ If ALL strategies find zero event URLs:
 
 The profiler tried:
 - map() → 0 URLs
-- scrape with waitFor (3s) → 0 URLs
+- scrape with wait_for (3s) → 0 URLs
 - crawl → 0 URLs
 
 Possible reasons:
