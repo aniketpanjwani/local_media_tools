@@ -59,6 +59,7 @@ EXCLUDE_PATTERNS = [
 ]
 
 MIN_URLS_THRESHOLD = 5
+DEFAULT_WAIT_FOR_MS = 3000  # Wait 3 seconds for JavaScript to render
 
 
 def filter_event_urls(urls: list[str]) -> list[str]:
@@ -158,10 +159,43 @@ def profile_source(url: str) -> dict:
         event_urls = []
         discovery_method = "map"
 
-    # Fallback to crawl if map found too few
+    # Fallback 1: Try scrape with waitFor for JavaScript-heavy sites
     if len(event_urls) < MIN_URLS_THRESHOLD:
         print(
-            f"  Map found too few URLs ({len(event_urls)}), trying crawl...",
+            f"  Map found too few URLs ({len(event_urls)}), trying scrape with waitFor...",
+            file=sys.stderr,
+        )
+
+        try:
+            # Use scrape with waitFor and links format for JS-heavy sites
+            scrape_result = app.scrape_url(
+                url,
+                params={
+                    "formats": ["links"],
+                    "waitFor": DEFAULT_WAIT_FOR_MS,
+                }
+            )
+
+            # Extract links from scrape result
+            all_links = []
+            if hasattr(scrape_result, "links"):
+                all_links = scrape_result.links or []
+            elif isinstance(scrape_result, dict):
+                all_links = scrape_result.get("links", [])
+
+            event_urls = filter_event_urls(all_links)
+            discovery_method = "map"  # Still use "map" in schema (scrape is just the technique)
+            print(
+                f"  Scrape with waitFor found {len(all_links)} total, {len(event_urls)} event URLs",
+                file=sys.stderr,
+            )
+        except Exception as e:
+            print(f"  Scrape with waitFor failed: {e}", file=sys.stderr)
+
+    # Fallback 2: Try crawl if scrape also found too few
+    if len(event_urls) < MIN_URLS_THRESHOLD:
+        print(
+            f"  Still too few URLs ({len(event_urls)}), trying crawl...",
             file=sys.stderr,
         )
 
@@ -191,6 +225,14 @@ def profile_source(url: str) -> dict:
     # Suggest regex pattern
     suggested_regex = suggest_regex_pattern(event_urls)
 
+    # Build notes based on what worked
+    if discovery_method == "crawl":
+        notes = f"Discovered {len(event_urls)} event URLs using crawl (map and scrape found too few)."
+    elif len(event_urls) >= MIN_URLS_THRESHOLD:
+        notes = f"Discovered {len(event_urls)} event URLs using map/scrape with waitFor."
+    else:
+        notes = f"Found only {len(event_urls)} event URLs. May need manual profiling."
+
     return {
         "success": True,
         "url": url,
@@ -198,7 +240,7 @@ def profile_source(url: str) -> dict:
         "event_urls_count": len(event_urls),
         "event_urls": event_urls[:10],  # Sample
         "suggested_regex": suggested_regex,
-        "notes": f"Discovered {len(event_urls)} event URLs using {discovery_method}.",
+        "notes": notes,
     }
 
 

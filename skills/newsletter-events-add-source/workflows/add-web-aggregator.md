@@ -153,27 +153,50 @@ Wait for user confirmation.
 
 ### 3e: Handle Profiling Failures
 
-If BOTH map and crawl find zero event URLs:
+The profiler now automatically tries multiple strategies:
+1. `map()` - Fast sitemap/link discovery
+2. `scrape_url()` with `waitFor: 3000` and `formats: ["links"]` - For JavaScript-heavy sites
+3. `crawl()` - Thorough multi-page crawl
+
+If ALL strategies find zero event URLs:
 
 ```
 ⚠️  Could not discover event URLs on {url}
 
+The profiler tried:
+- map() → 0 URLs
+- scrape with waitFor (3s) → 0 URLs
+- crawl → 0 URLs
+
 Possible reasons:
-- Site requires JavaScript that Firecrawl couldn't render
-- Events are loaded via API/AJAX
+- Site requires login or has bot protection
+- Events are loaded via authenticated API
 - Non-standard URL structure
 
 Options:
-1. Add anyway (you can manually set event_url_pattern later)
-2. Skip this source
-3. Provide a custom event_url_pattern now
+1. Study the page manually to find URL patterns
+2. Add anyway without a profile (configure later)
+3. Skip this source
 
 Choose (1-3):
 ```
 
-If user chooses 1: Save with `profile: null` and `needs_manual_config: true`
-If user chooses 2: Skip and return status "Skipped - profiling failed"
-If user chooses 3: Prompt for pattern, validate it, then continue
+**Option 1 - Manual Pattern Discovery:**
+1. Use WebFetch to analyze the page structure
+2. Look for event detail links in the HTML
+3. Derive a regex pattern from observed URLs
+4. **CRITICAL:** Set `discovery_method: "map"` - the schema only allows "map" or "crawl"
+5. Set `notes: "Manually profiled - [description]"` to document manual discovery
+
+**Option 2:** Save with `profile: null`
+
+**Option 3:** Skip and return status "Skipped - profiling failed"
+
+<critical>
+**Schema Constraint:** `discovery_method` must be `"map"` or `"crawl"`.
+Do NOT use values like `"manual"` or `"scrape"` - they will cause Pydantic validation errors.
+When manually profiling, use `"map"` and document in the `notes` field.
+</critical>
 
 ---
 

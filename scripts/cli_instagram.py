@@ -7,6 +7,8 @@ Usage:
     uv run python scripts/cli_instagram.py scrape --handle wayside_cider
     uv run python scripts/cli_instagram.py list-posts --handle wayside_cider
     uv run python scripts/cli_instagram.py show-stats
+    uv run python scripts/cli_instagram.py classify --post-id 123 --classification event --reason "Has future date"
+    uv run python scripts/cli_instagram.py classify --batch-json '[{"post_id": "123", "classification": "event"}]'
 
 This ensures:
 - Correct API parameters (handle, not username)
@@ -314,6 +316,51 @@ def cmd_show_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_classify(args: argparse.Namespace) -> int:
+    """Classify a post or batch of posts."""
+    storage = get_storage()
+
+    # Single post classification
+    if args.post_id:
+        success = storage.update_post_classification(
+            instagram_post_id=args.post_id,
+            classification=args.classification,
+            classification_reason=args.reason,
+            needs_image_analysis=not args.no_image_analysis if args.no_image_analysis else None,
+        )
+
+        if success:
+            print(f"Updated post {args.post_id}: {args.classification}")
+            if args.reason:
+                print(f"  Reason: {args.reason}")
+            return 0
+        else:
+            print(f"Error: Post {args.post_id} not found", file=sys.stderr)
+            return 1
+
+    # Batch classification from JSON
+    if args.batch_json:
+        try:
+            batch_data = json.loads(args.batch_json)
+            classifications = [
+                (item["post_id"], item["classification"], item.get("reason"))
+                for item in batch_data
+            ]
+            updated = storage.update_post_classifications_batch(classifications)
+            print(f"Updated {updated} posts")
+
+            if args.json:
+                print(json.dumps({"updated": updated, "total": len(classifications)}))
+            return 0
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"Error parsing batch JSON: {e}", file=sys.stderr)
+            print('Expected format: [{"post_id": "123", "classification": "event", "reason": "..."}]', file=sys.stderr)
+            return 1
+
+    print("Error: Must provide --post-id or --batch-json", file=sys.stderr)
+    return 1
+
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -325,6 +372,8 @@ Examples:
   uv run python scripts/cli_instagram.py scrape --handle wayside_cider
   uv run python scripts/cli_instagram.py list-posts --handle wayside_cider
   uv run python scripts/cli_instagram.py show-stats
+  uv run python scripts/cli_instagram.py classify --post-id 123 --classification event --reason "Has future date"
+  uv run python scripts/cli_instagram.py classify --batch-json '[{"post_id": "123", "classification": "event", "reason": "..."}]'
         """,
     )
 
@@ -350,6 +399,29 @@ Examples:
     stats_parser = subparsers.add_parser("show-stats", help="Show database statistics")
     stats_parser.add_argument("--json", action="store_true", help="Output JSON")
     stats_parser.set_defaults(func=cmd_show_stats)
+
+    # classify command
+    classify_parser = subparsers.add_parser("classify", help="Classify posts as event/not_event/ambiguous")
+    classify_parser.add_argument("--post-id", type=str, help="Single post ID to classify")
+    classify_parser.add_argument(
+        "--classification",
+        type=str,
+        choices=["event", "not_event", "ambiguous"],
+        help="Classification value",
+    )
+    classify_parser.add_argument("--reason", type=str, help="Classification reason")
+    classify_parser.add_argument(
+        "--no-image-analysis",
+        action="store_true",
+        help="Mark post as not needing image analysis",
+    )
+    classify_parser.add_argument(
+        "--batch-json",
+        type=str,
+        help='Batch classify from JSON: [{"post_id": "123", "classification": "event", "reason": "..."}]',
+    )
+    classify_parser.add_argument("--json", action="store_true", help="Output JSON")
+    classify_parser.set_defaults(func=cmd_classify)
 
     args = parser.parse_args()
     return args.func(args)

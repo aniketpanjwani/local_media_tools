@@ -929,6 +929,74 @@ class SqliteStorage:
 
             return {row["instagram_post_id"]: dict(row) for row in rows}
 
+    def update_post_classification(
+        self,
+        instagram_post_id: str,
+        classification: Literal["event", "not_event", "ambiguous"],
+        classification_reason: str | None = None,
+        needs_image_analysis: bool | None = None,
+    ) -> bool:
+        """
+        Update classification fields for a single post.
+
+        Args:
+            instagram_post_id: The Instagram post ID to update
+            classification: One of "event", "not_event", "ambiguous"
+            classification_reason: Brief explanation of why this classification
+            needs_image_analysis: Whether this post needs image analysis (optional)
+
+        Returns:
+            True if post was found and updated, False otherwise
+        """
+        with self._connection() as conn:
+            # Build update query dynamically based on provided fields
+            updates = ["classification = ?", "classification_reason = ?", "updated_at = CURRENT_TIMESTAMP"]
+            params: list = [classification, classification_reason]
+
+            if needs_image_analysis is not None:
+                updates.append("needs_image_analysis = ?")
+                params.append(1 if needs_image_analysis else 0)
+
+            params.append(instagram_post_id)
+
+            cursor = conn.execute(
+                f"""
+                UPDATE posts SET {', '.join(updates)}
+                WHERE instagram_post_id = ?
+                """,
+                params,
+            )
+            return cursor.rowcount > 0
+
+    def update_post_classifications_batch(
+        self,
+        classifications: list[tuple[str, Literal["event", "not_event", "ambiguous"], str | None]],
+    ) -> int:
+        """
+        Update classification fields for multiple posts in a single transaction.
+
+        Args:
+            classifications: List of tuples (instagram_post_id, classification, reason)
+
+        Returns:
+            Number of posts updated
+        """
+        updated = 0
+        with self._connection() as conn:
+            for post_id, classification, reason in classifications:
+                cursor = conn.execute(
+                    """
+                    UPDATE posts SET
+                        classification = ?,
+                        classification_reason = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE instagram_post_id = ?
+                    """,
+                    (classification, reason, post_id),
+                )
+                updated += cursor.rowcount
+        return updated
+
     # -------------------------------------------------------------------------
     # Scraped Pages (Web Aggregator URL Tracking)
     # -------------------------------------------------------------------------

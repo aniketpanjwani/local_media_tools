@@ -46,6 +46,10 @@ uv run python scripts/cli_instagram.py list-posts --handle wayside_cider
 
 # Show database statistics
 uv run python scripts/cli_instagram.py show-stats
+
+# Classify posts (single or batch)
+uv run python scripts/cli_instagram.py classify --post-id 123 --classification event --reason "Has future date"
+uv run python scripts/cli_instagram.py classify --batch-json '[{"post_id": "123", "classification": "event", "reason": "..."}]'
 ```
 
 The CLI tools ensure:

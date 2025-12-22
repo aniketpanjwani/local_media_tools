@@ -137,6 +137,23 @@ For each post, record:
 - `classification_reason`: Brief explanation (e.g., "past event recap", "has future date Dec 20")
 - `needs_image_analysis`: true | false
 
+**Save classifications using the CLI:**
+
+```bash
+# Single post
+uv run python scripts/cli_instagram.py classify \
+    --post-id 3793483319070639375 \
+    --classification event \
+    --reason "Has future date Dec 20"
+
+# Batch classify multiple posts (more efficient)
+uv run python scripts/cli_instagram.py classify --batch-json '[
+    {"post_id": "3793483319070639375", "classification": "event", "reason": "Has future date Dec 20"},
+    {"post_id": "3791385475840541801", "classification": "not_event", "reason": "Past event recap"},
+    {"post_id": "3791126381384697245", "classification": "not_event", "reason": "Animal photo"}
+]'
+```
+
 **After classifying all NEW posts, display a summary table:**
 
 | Classification | New Posts | Skipped (Already Analyzed) |

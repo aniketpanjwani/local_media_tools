@@ -60,3 +60,60 @@ for page in pages:
 ## Rate Limits
 
 Firecrawl has built-in rate limiting. The SDK handles this automatically.
+
+## JavaScript-Heavy Sites
+
+Firecrawl includes "smart wait" by default, but some sites (like Eventbrite) need extra time for JavaScript to render.
+
+### The `waitFor` Parameter
+
+Add extra delay before scraping:
+
+```python
+# For scraping with link discovery
+result = app.scrape_url(url, params={
+    "formats": ["links"],
+    "waitFor": 3000  # Wait 3 seconds for JS
+})
+
+# For crawling
+result = app.crawl(url, scrape_options={"waitFor": 3000})
+```
+
+**When to use:**
+- Site loads content via JavaScript/AJAX
+- Initial `map()` returns 0 or very few URLs
+- Sites like Eventbrite, modern SPAs, React/Vue apps
+
+### Link Discovery Pattern
+
+For JS-heavy sites, use `scrape_url` with `formats: ["links"]` instead of `map()`:
+
+```python
+# map() often fails on JS sites
+map_result = app.map(url)  # Returns 0 links for Eventbrite
+
+# scrape with waitFor + links format works
+scrape_result = app.scrape_url(url, params={
+    "formats": ["links"],
+    "waitFor": 3000
+})
+links = scrape_result.links  # Returns 60+ links for Eventbrite
+```
+
+### Actions for Complex Interactions
+
+For sites requiring user interaction (infinite scroll, click to load):
+
+```python
+result = app.scrape_url(url, params={
+    "actions": [
+        {"type": "wait", "milliseconds": 2000},
+        {"type": "scroll", "direction": "down"},
+        {"type": "wait", "milliseconds": 1000},
+    ],
+    "formats": ["links"]
+})
+```
+
+**Supported actions:** `wait`, `click`, `scroll`, `write`, `press`, `executeJavascript`
