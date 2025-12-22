@@ -24,9 +24,13 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from firecrawl import FirecrawlApp
 
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from scripts.paths import get_env_path
+
 # Load environment variables from stable config directory
-_env_path = Path.home() / ".config" / "local-media-tools" / ".env"
-load_dotenv(_env_path)
+load_dotenv(get_env_path())
 
 # Event URL patterns to look for
 EVENT_PATTERNS = [

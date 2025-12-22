@@ -6,7 +6,10 @@ description: Generate markdown newsletters from stored events. Use when the user
 <essential_principles>
 ## How This Skill Works
 
-This skill generates markdown newsletters from events stored in SQLite. The user's **natural language formatting preferences** are read from the config file and applied during generation.
+This skill generates markdown newsletters from events stored in SQLite. The workflow splits responsibility:
+
+1. **CLI tool** handles fragile data operations (paths, types, queries)
+2. **Claude** handles creative generation (interpreting preferences, formatting)
 
 ### Key Concept: Natural Language Formatting
 
@@ -22,77 +25,84 @@ formatting_preferences: |
 
 ### Data Source
 
-Events are stored in SQLite at `tmp/extraction/events.db` (or path from config).
+Events are stored in SQLite at `~/.config/local-media-tools/data/events.db`.
+Config is at `~/.config/local-media-tools/sources.yaml`.
 
 ### Output
 
-Generated markdown saved to `tmp/output/newsletter_YYYY-MM-DD.md`.
+Generated markdown saved to `./newsletter_YYYY-MM-DD.md` in the current working directory.
 </essential_principles>
 
+<critical>
+## Use CLI for Data Loading - Never Inline Python
+
+**NEVER write inline Python to load events or config.** Use the CLI tool:
+
+```bash
+# Get plugin directory first
+PLUGIN_DIR=$(cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath')
+
+# Load events and preferences (default: next 7 days)
+cd "$PLUGIN_DIR" && uv run python scripts/cli_newsletter.py load --days 7
+```
+
+The CLI tool handles:
+- Correct database path resolution
+- Proper date type conversions
+- Loading formatting preferences from config
+- Returning structured JSON
+
+**Do NOT:**
+- Write inline Python to query the database
+- Hardcode paths to config or database
+- Import schema modules directly
+</critical>
+
 <workflow>
-## Step 1: Load Configuration
+## Step 0: Get Plugin Directory
 
-Read `config/sources.yaml` to get:
-- `newsletter.name` - Newsletter title
-- `newsletter.region` - Geographic region
-- `newsletter.formatting_preferences` - User's formatting instructions
-
-```python
-from config import AppConfig
-
-config = AppConfig.from_yaml("config/sources.yaml")
-name = config.newsletter.name
-region = config.newsletter.region
-formatting_prefs = config.newsletter.formatting_preferences
+```bash
+cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath'
 ```
 
-## Step 2: Query Events from SQLite
+Save the output path as `PLUGIN_DIR`.
 
-```python
-from datetime import date, timedelta
-from schemas.sqlite_storage import SqliteStorage
+## Step 1: Load Data with CLI
 
-storage = SqliteStorage(config.storage.path)
+Run the CLI to get events and formatting preferences:
 
-# Default: next 7 days
-start_date = date.today()
-end_date = start_date + timedelta(days=7)
-
-events = storage.query(date_from=start_date, date_to=end_date)
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_newsletter.py load --days 7
 ```
 
-If no events found, report this to user with helpful suggestions:
-- Run `/research` to scrape new events
-- Adjust date range
-- Check that sources are configured
-
-## Step 3: Prepare Event Data
-
-For each event, extract the relevant fields:
-
-```python
-events_data = []
-for event in events:
-    events_data.append({
-        "title": event.title,
-        "venue": event.venue.name,
-        "venue_city": event.venue.city,
-        "date": event.event_date.strftime("%Y-%m-%d"),
-        "day_of_week": event.event_date.strftime("%A"),
-        "formatted_date": event.event_date.strftime("%B %d"),
-        "time": event.start_time.strftime("%-I:%M %p") if event.start_time else None,
-        "description": event.description or event.short_description,
-        "category": event.category.value if event.category else "other",
-        "price": event.price or ("Free" if event.is_free else None),
-        "ticket_url": event.ticket_url,
-        "event_url": event.event_url,
-        "source_url": event.source_url,
-    })
+Or for a specific date range:
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_newsletter.py load --from 2025-01-01 --to 2025-01-14
 ```
+
+**Output:** JSON containing:
+- `newsletter_name` - Newsletter title
+- `region` - Geographic region
+- `formatting_preferences` - User's natural language formatting instructions
+- `date_range` - Start and end dates
+- `event_count` - Number of events
+- `events` - Array of event objects
+
+If no events found, the CLI returns an error with suggestions.
+
+## Step 2: Generate Newsletter (Your Creative Task)
+
+Using the JSON output from Step 1, generate markdown that follows the `formatting_preferences`.
+
+**Your task:** Interpret the natural language preferences and apply them creatively:
+- Read the `formatting_preferences` field
+- Adapt raw event descriptions to match user's desired style
+- Apply emoji rules, formatting patterns, organization
+- Generate readable, well-structured markdown
 
 ### Available Fields Reference
 
-When generating the newsletter, these fields are available for each event:
+Each event in the `events` array has:
 
 | Field | Description | Example |
 |-------|-------------|---------|
@@ -102,55 +112,35 @@ When generating the newsletter, these fields are available for each event:
 | `date` | ISO date | "2025-01-20" |
 | `day_of_week` | Full day name | "Saturday" |
 | `formatted_date` | Human-readable date | "January 20" |
-| `time` | Start time | "8:00 PM" |
+| `time` | Start time | "8:00 PM" or null |
 | `description` | Event description | "Live jazz trio..." |
 | `category` | Event category | "music", "art", "food_drink" |
-| `price` | Price or "Free" | "$15" or "Free" |
+| `price` | Price or null | "$15" |
+| `is_free` | Boolean | true/false |
 | `ticket_url` | Link to buy tickets | URL or null |
 | `event_url` | Link to event page | URL or null |
-| `source_url` | Where event was found | Instagram post, Facebook event, or web page URL |
+| `source_url` | Where event was found | URL or null |
 
-**Note:** `source_url` is the original source where the event was discovered:
-- Instagram events → the Instagram post URL
-- Facebook events → the Facebook event page URL
-- Web aggregator events → the scraped page URL
+### Formatting Guidelines
 
-Users can request source attribution in their `formatting_preferences`, e.g.:
-```yaml
-formatting_preferences: |
-  Include [Source](source_url) link for each event.
+1. **Read preferences carefully** - follow user instructions exactly
+2. **Handle nulls gracefully** - skip fields that are null/missing
+3. **Sort appropriately** - events come pre-sorted by date then time
+4. **Be creative** - adapt descriptions to match user's style
+
+## Step 3: Save Output
+
+Write the generated markdown to the current working directory:
+
+```
+./newsletter_YYYY-MM-DD.md
 ```
 
-## Step 4: Generate Markdown
+Use today's date for the filename.
 
-Apply the user's formatting preferences to generate the newsletter.
+## Step 4: Display Preview
 
-**Your task:** Read the `formatting_preferences` string and generate markdown that follows those instructions exactly.
-
-Include:
-- Newsletter header with name and date range
-- Events organized per user's preference (by date, by category, etc.)
-- Formatting per user's preference (emojis, separators, structure)
-- Only include fields that are available (skip nulls gracefully)
-
-## Step 5: Save Output
-
-```python
-from pathlib import Path
-from datetime import date
-
-output_dir = Path("tmp/output")
-output_dir.mkdir(parents=True, exist_ok=True)
-
-filename = f"newsletter_{date.today().isoformat()}.md"
-output_path = output_dir / filename
-
-output_path.write_text(markdown_content)
-```
-
-## Step 6: Display Preview
-
-Show the first ~50 lines of generated markdown in terminal so user can review.
+Show the first ~50 lines of generated markdown so user can review.
 
 Report:
 - Output file path
@@ -161,18 +151,20 @@ Report:
 <error_handling>
 ### No Events Found
 
+The CLI will return:
+```json
+{
+  "error": "no_events",
+  "message": "No events found from 2025-01-01 to 2025-01-07",
+  "suggestion": "Run /newsletter-events:research to scrape new events, or try a wider date range with --days 14"
+}
 ```
-No events found for {start_date} to {end_date}.
 
-Suggestions:
-- Run /research to scrape new events
-- Check your date range (default: next 7 days)
-- Verify sources are configured in config/sources.yaml
-```
+Report this to the user with the suggestion.
 
 ### No Formatting Preferences
 
-Use sensible defaults:
+If `formatting_preferences` is null or empty, use sensible defaults:
 ```
 Organize events chronologically by date.
 Use section headers for each day (e.g., "## Saturday, January 20").
@@ -182,17 +174,21 @@ Keep formatting simple and readable.
 
 ### Database Not Found
 
-```
-Events database not found at {path}.
-Run /research first to scrape events.
+The CLI will return:
+```json
+{
+  "error": "database_not_found",
+  "message": "Database not found at ~/.config/local-media-tools/data/events.db",
+  "suggestion": "Run /newsletter-events:research to scrape events first"
+}
 ```
 </error_handling>
 
 <success_criteria>
 Newsletter generation is complete when:
-- [ ] Config loaded (name, region, preferences)
-- [ ] Events queried from SQLite
+- [ ] CLI tool used to load events (not inline Python)
+- [ ] Formatting preferences interpreted correctly
 - [ ] Markdown generated following user's preferences
-- [ ] Output saved to `tmp/output/newsletter_YYYY-MM-DD.md`
+- [ ] Output saved to `./newsletter_YYYY-MM-DD.md`
 - [ ] Preview displayed to user
 </success_criteria>

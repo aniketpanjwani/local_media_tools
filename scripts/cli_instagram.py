@@ -27,12 +27,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config.config_schema import AppConfig
 from schemas.event import InstagramPost, InstagramProfile
 from schemas.sqlite_storage import SqliteStorage
+from scripts.paths import get_sources_path, get_database_path, TEMP_RAW_DIR
 from scripts.scrape_instagram import ScrapeCreatorsClient, ScrapeCreatorsError
 
 
 def get_config() -> AppConfig:
     """Load configuration from user config directory."""
-    config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+    config_path = get_sources_path()
     if not config_path.exists():
         print(f"Error: Config file not found at {config_path}", file=sys.stderr)
         print("Run /newsletter-events:setup to create configuration.", file=sys.stderr)
@@ -42,8 +43,7 @@ def get_config() -> AppConfig:
 
 def get_storage() -> SqliteStorage:
     """Get SQLite storage instance."""
-    db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
-    return SqliteStorage(db_path)
+    return SqliteStorage(get_database_path())
 
 
 def scrape_account(client: ScrapeCreatorsClient, handle: str, limit: int = 20) -> dict:
@@ -98,10 +98,9 @@ def scrape_account(client: ScrapeCreatorsClient, handle: str, limit: int = 20) -
 
 def save_raw_response(handle: str, scrape_result: dict) -> Path:
     """Save raw API response to data directory."""
-    raw_dir = Path.home() / ".config" / "local-media-tools" / "data" / "raw"
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    TEMP_RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    output_path = raw_dir / f"instagram_{handle}.json"
+    output_path = TEMP_RAW_DIR / f"instagram_{handle}.json"
 
     # Save the original API response, not the processed data
     raw_response = scrape_result.get("raw_response", {})

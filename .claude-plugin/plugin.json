@@ -1,6 +1,6 @@
 {
   "name": "newsletter-events",
-  "version": "0.15.2",
+  "version": "0.16.0",
   "description": "Scrape local events from Instagram, Facebook, and web sources. Generate formatted newsletters with natural language preferences.",
   "author": {
     "name": "Aniket Panjwani",

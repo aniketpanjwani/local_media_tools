@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2025-12-21
+
+### Added
+- **CLI tool for events**: `scripts/cli_events.py`
+  - `save --json '{...}'` - Save single event with validation
+  - `save-batch --file events.json` - Save multiple events from JSON file
+  - `query --days 7` - Query events by date range
+  - `stats` - Show event database statistics
+  - Time parsing for 12-hour ("7pm", "7:30 PM") and 24-hour ("19:00") formats
+- **CLI tool for newsletter loading**: `scripts/cli_newsletter.py`
+  - `load --days 7` - Load events and formatting preferences as JSON
+  - Claude generates markdown creatively from structured data
+- **Time extraction guide** in web aggregator workflow
+  - Conversion table for common time patterns
+  - Doors/Show time handling (use show time)
+
+### Changed
+- All scripts now use centralized path handling via `scripts/paths.py`
+  - `cli_instagram.py`, `cli_web.py`, `profile_source.py`, `config_schema.py` updated
+- Rewrote `newsletter-events-write/SKILL.md` to use CLI-first workflow
+  - CLI loads data (narrow bridge), Claude generates markdown (open field)
+- Updated `research-web-aggregator.md` to use `cli_events.py` for saving events
+
+### Fixed
+- Skills no longer require inline Python for fragile operations (paths, types, queries)
+- Newsletter generation now has consistent data structure from CLI
+
 ## [0.15.2] - 2025-12-21
 
 ### Added
@@ -205,6 +232,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add explicit post classification step to Instagram workflow
 
+[0.16.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.15.2...v0.16.0
 [0.15.2]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.15.1...v0.15.2
 [0.15.1]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.15.0...v0.15.1
 [0.15.0]: https://github.com/aniketpanjwani/local_media_tools/compare/v0.14.2...v0.15.0

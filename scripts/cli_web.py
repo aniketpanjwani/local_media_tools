@@ -26,13 +26,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.config_schema import AppConfig, WebAggregatorSource
 from schemas.sqlite_storage import SqliteStorage
+from scripts.paths import get_sources_path, get_database_path, TEMP_RAW_DIR
 from scripts.scrape_firecrawl import FirecrawlClient, FirecrawlError
 from scripts.url_utils import normalize_url
 
 
 def get_config() -> AppConfig:
     """Load configuration from user config directory."""
-    config_path = Path.home() / ".config" / "local-media-tools" / "sources.yaml"
+    config_path = get_sources_path()
     if not config_path.exists():
         print(f"Error: Config file not found at {config_path}", file=sys.stderr)
         print("Run /newsletter-events:setup to create configuration.", file=sys.stderr)
@@ -42,8 +43,7 @@ def get_config() -> AppConfig:
 
 def get_storage() -> SqliteStorage:
     """Get SQLite storage instance."""
-    db_path = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
-    return SqliteStorage(db_path)
+    return SqliteStorage(get_database_path())
 
 
 def discover_urls(client: FirecrawlClient, source: WebAggregatorSource) -> list[str]:
@@ -251,9 +251,8 @@ def cmd_scrape(args: argparse.Namespace) -> int:
 
             # Save raw data
             if pages_scraped:
-                raw_dir = Path.home() / ".config" / "local-media-tools" / "data" / "raw"
-                raw_dir.mkdir(parents=True, exist_ok=True)
-                raw_path = raw_dir / f"web_{source.name.replace(' ', '_')}_{datetime.now():%Y%m%d_%H%M%S}.json"
+                TEMP_RAW_DIR.mkdir(parents=True, exist_ok=True)
+                raw_path = TEMP_RAW_DIR / f"web_{source.name.replace(' ', '_')}_{datetime.now():%Y%m%d_%H%M%S}.json"
                 with open(raw_path, "w") as f:
                     json.dump(pages_scraped, f, indent=2)
                 print(f"  Saved raw data to {raw_path}", file=sys.stderr)

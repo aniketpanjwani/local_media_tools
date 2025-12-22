@@ -2,15 +2,22 @@
 Configuration schema with Pydantic validation.
 """
 
+import sys
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
+# Add project root to path for imports (needed when used as module)
+_project_root = Path(__file__).parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
 
-# Default database path in stable config directory
-DEFAULT_DB_PATH = Path.home() / ".config" / "local-media-tools" / "data" / "events.db"
+from scripts.paths import get_database_path
+
+# Default database path from centralized path resolver
+DEFAULT_DB_PATH = get_database_path()
 
 
 class StorageConfig(BaseModel):
