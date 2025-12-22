@@ -35,6 +35,7 @@ load_dotenv(get_env_path())
 # Event URL patterns to look for
 EVENT_PATTERNS = [
     r"/events?/",
+    r"/e/[a-z]",  # Eventbrite: /e/event-name-123
     r"/calendar/",
     r"/shows?/",
     r"/performances?/",
