@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.1] - 2025-12-22
+
+### Fixed
+- **Firecrawl SDK API compatibility**: Updated to use new SDK method signatures
+  - Changed `app.scrape_url(url, params={"waitFor": ...})` to `app.scrape(url, wait_for=...)`
+  - Fixed snake_case parameter names (`wait_for` instead of `waitFor`)
+  - This was causing JS-heavy site profiling to silently fail
+
 ## [0.17.0] - 2025-12-22
 
 ### Added
