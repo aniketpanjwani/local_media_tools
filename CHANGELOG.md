@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2025-12-22
+
+### Added
+- **Post classification CLI command**: `scripts/cli_instagram.py classify`
+  - `--post-id <id> --classification <event|not_event|ambiguous> --reason "..."` - Single post
+  - `--batch-json '[{"post_id": "...", "classification": "...", "reason": "..."}]'` - Batch mode
+- **SqliteStorage classification methods**:
+  - `update_post_classification()` - Update single post
+  - `update_post_classifications_batch()` - Batch update for efficiency
+- **JavaScript rendering for web profiler**: `scripts/profile_source.py`
+  - Now tries `scrape(waitFor=3000, formats=["links"])` for JS-heavy sites
+  - Fallback chain: `map()` → `scrape+waitFor` → `crawl()`
+  - Tested: Eventbrite Winnipeg now returns 60+ event URLs (was 0)
+- **Firecrawl JS docs**: `references/firecrawl-api.md`
+  - `waitFor` parameter for JavaScript rendering
+  - `actions` for complex interactions (scroll, click)
+
+### Fixed
+- Web profiler now works on JavaScript-heavy sites (Eventbrite, SPAs)
+- Documented schema constraint: `discovery_method` must be "map" or "crawl"
+- Workflows now use CLI commands instead of pseudo-code that referenced non-existent methods
+
 ## [0.16.0] - 2025-12-21
 
 ### Added
