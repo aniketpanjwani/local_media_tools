@@ -161,4 +161,54 @@ Skills are workflows that can be triggered by Claude when relevant.
 
 ---
 
+## CLI Tools
+
+These Python CLI tools are used internally by the plugin. They can be run manually for debugging or advanced usage.
+
+All commands are run from the plugin directory:
+```bash
+PLUGIN_DIR=$(cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-events@local-media-tools"][0].installPath')
+cd "$PLUGIN_DIR" && uv run python scripts/<script>.py <command>
+```
+
+### cli_web.py
+
+Web aggregator scraping and page management.
+
+| Command | Description |
+|---------|-------------|
+| `discover --all` | Preview URLs that would be scraped (no scraping) |
+| `scrape --all --limit N` | Scrape all web sources, save to raw files |
+| `list-pages` | List scraped pages with index numbers |
+| `read-page --source "Name" --index N` | Read one page's markdown content |
+| `mark-scraped --source "Name" --url "URL" --events-count N` | Mark URL as processed |
+| `show-stats` | Show scraping statistics |
+
+**Why page-by-page?** Large scrapes (40+ pages) can exceed Claude's token limits when read all at once. The `list-pages` → `read-page` pattern processes one page at a time to avoid this.
+
+### cli_instagram.py
+
+Instagram scraping and post management.
+
+| Command | Description |
+|---------|-------------|
+| `scrape --all` | Scrape all configured Instagram accounts |
+| `scrape --handle <handle>` | Scrape specific account |
+| `list-posts --handle <handle>` | List posts from database |
+| `classify --post-id <id> --classification <type>` | Classify a post |
+| `show-stats` | Show Instagram statistics |
+
+### cli_events.py
+
+Event database management.
+
+| Command | Description |
+|---------|-------------|
+| `save --json '{...}'` | Save a single event to database |
+| `save-batch --file events.json` | Save multiple events from JSON file |
+| `query --days N` | Query events by date range |
+| `stats` | Show event database statistics |
+
+---
+
 [Back to Documentation](README.md)
