@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.3] - 2025-12-22
+
+### Fixed
+- **Remove EVENT_PATTERNS pre-filtering**: Profiler now discovers ALL URLs, not just "event-like" ones
+  - Previous approach missed valid events (e.g., Tourism Winnipeg's `/display,event/` URLs)
+  - Pre-filtering is fundamentally flawed - every site has different URL structures
+  - Real filtering happens via per-source `event_url_regex` in sources.yaml at scrape time
+  - Profiler now only excludes obvious noise (about, contact, static assets)
+
 ## [0.17.2] - 2025-12-22
 
 ### Fixed

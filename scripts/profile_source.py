@@ -32,21 +32,13 @@ from scripts.paths import get_env_path
 # Load environment variables from stable config directory
 load_dotenv(get_env_path())
 
-# Event URL patterns to look for
-EVENT_PATTERNS = [
-    r"/events?/",
-    r"/e/[a-z]",  # Eventbrite: /e/event-name-123
-    r"/calendar/",
-    r"/shows?/",
-    r"/performances?/",
-    r"/whats-on/",
-    r"/happening/",
-    r"/gigs?/",
-    r"/concerts?/",
-]
-
 # Patterns to exclude (navigation, static files, etc.)
+# We intentionally do NOT pre-filter by "event-like" patterns because:
+# - Every site has different URL structures
+# - Pre-filtering misses valid events (e.g., /display,event/ vs /events/)
+# - The per-source event_url_regex in sources.yaml handles real filtering
 EXCLUDE_PATTERNS = [
+    r"^https?://[^/]+/?$",  # Homepage only
     r"/about",
     r"/contact",
     r"/privacy",
@@ -56,23 +48,24 @@ EXCLUDE_PATTERNS = [
     r"/cart",
     r"/checkout",
     r"/account",
-    r"\.(css|js|png|jpg|gif|svg|ico|pdf)$",
+    r"/search",
+    r"/faq",
+    r"/help",
+    r"\.(css|js|png|jpg|gif|svg|ico|pdf|xml|json)$",
+    r"\?.*page=",  # Pagination params (keep /page:X style)
 ]
 
 MIN_URLS_THRESHOLD = 5
 DEFAULT_WAIT_FOR_MS = 3000  # Wait 3 seconds for JavaScript to render
 
 
-def filter_event_urls(urls: list[str]) -> list[str]:
-    """Filter URLs to likely event pages."""
+def filter_urls(urls: list[str]) -> list[str]:
+    """Filter out navigation/static URLs, keep everything else for inspection."""
     filtered = []
     for url in urls:
-        # Check exclusions first
         if any(re.search(p, url, re.I) for p in EXCLUDE_PATTERNS):
             continue
-        # Check if matches event pattern
-        if any(re.search(p, url, re.I) for p in EVENT_PATTERNS):
-            filtered.append(url)
+        filtered.append(url)
     return filtered
 
 
@@ -151,9 +144,9 @@ def profile_source(url: str) -> dict:
         elif isinstance(map_result, list):
             all_urls = [u.url if hasattr(u, "url") else u for u in map_result]
 
-        event_urls = filter_event_urls(all_urls)
+        event_urls = filter_urls(all_urls)
         discovery_method = "map"
-        print(f"  Map found {len(all_urls)} total, {len(event_urls)} event URLs", file=sys.stderr)
+        print(f"  Map found {len(all_urls)} total, {len(event_urls)} content URLs", file=sys.stderr)
     except Exception as e:
         print(f"  Map failed: {e}", file=sys.stderr)
         all_urls = []
@@ -182,10 +175,10 @@ def profile_source(url: str) -> dict:
             elif isinstance(scrape_result, dict):
                 all_links = scrape_result.get("links", [])
 
-            event_urls = filter_event_urls(all_links)
+            event_urls = filter_urls(all_links)
             discovery_method = "map"  # Still use "map" in schema (scrape is just the technique)
             print(
-                f"  Scrape with wait_for found {len(all_links)} total, {len(event_urls)} event URLs",
+                f"  Scrape with wait_for found {len(all_links)} total, {len(event_urls)} content URLs",
                 file=sys.stderr,
             )
         except Exception as e:
@@ -215,9 +208,9 @@ def profile_source(url: str) -> dict:
                     if hasattr(page, "links"):
                         all_links.extend(page.links)
 
-            event_urls = filter_event_urls(all_links)
+            event_urls = filter_urls(all_links)
             discovery_method = "crawl"
-            print(f"  Crawl found {len(all_links)} total, {len(event_urls)} event URLs", file=sys.stderr)
+            print(f"  Crawl found {len(all_links)} total, {len(event_urls)} content URLs", file=sys.stderr)
         except Exception as e:
             print(f"  Crawl failed: {e}", file=sys.stderr)
 
@@ -226,11 +219,11 @@ def profile_source(url: str) -> dict:
 
     # Build notes based on what worked
     if discovery_method == "crawl":
-        notes = f"Discovered {len(event_urls)} event URLs using crawl (map and scrape found too few)."
+        notes = f"Discovered {len(event_urls)} URLs using crawl (map and scrape found too few)."
     elif len(event_urls) >= MIN_URLS_THRESHOLD:
-        notes = f"Discovered {len(event_urls)} event URLs using map/scrape with wait_for."
+        notes = f"Discovered {len(event_urls)} URLs using map/scrape with wait_for."
     else:
-        notes = f"Found only {len(event_urls)} event URLs. May need manual profiling."
+        notes = f"Found only {len(event_urls)} URLs. May need manual profiling."
 
     return {
         "success": True,
@@ -265,7 +258,7 @@ def main():
         if result.get("success"):
             print(f"\n📊 Source Profile: {args.url}")
             print(f"   Discovery Method: {result['discovery_method']}")
-            print(f"   Event URLs Found: {result['event_urls_count']}")
+            print(f"   URLs Found: {result['event_urls_count']}")
             if result.get("suggested_regex"):
                 print(f"   Suggested Pattern: {result['suggested_regex']}")
             print("\n   Sample URLs:")
