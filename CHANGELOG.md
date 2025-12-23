@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.4] - 2025-12-22
+
+### Fixed
+- **Use profile's event_url_regex during web scraping**: Research now uses the URL pattern learned during `/add-source`
+  - Scraper was ignoring profile data and applying hardcoded patterns (`/events?/`, `/calendar/`)
+  - Sites like Tourism Winnipeg (`/display,event/`) and Eventbrite (`/e/`) returned 0 URLs
+  - Now profiling captures site-specific patterns and research uses them
+
 ## [0.17.3] - 2025-12-22
 
 ### Fixed
