@@ -158,20 +158,13 @@ class FirecrawlClient:
         urls: list[str],
         pattern: str | None = None,
     ) -> list[str]:
-        """Filter URLs to likely event pages."""
-        # Common event URL patterns
-        default_patterns = [
-            r"/events?/",
-            r"/calendar/",
-            r"/shows?/",
-            r"/performances?/",
-            r"/whats-on/",
-            r"/happening/",
-            r"/gigs?/",
-            r"/concerts?/",
-        ]
+        """
+        Filter URLs using the provided regex pattern from source profile.
 
-        # Patterns to exclude
+        If no pattern provided, returns all URLs (trust the map/crawl results).
+        The pattern should be a regex from the source profile's event_url_regex.
+        """
+        # Patterns to exclude (navigation, static files)
         exclude_patterns = [
             r"/about",
             r"/contact",
@@ -191,13 +184,12 @@ class FirecrawlClient:
             if any(re.search(p, url, re.I) for p in exclude_patterns):
                 continue
 
-            # Check if matches event pattern
+            # If pattern provided (from profile), use it as regex
             if pattern:
-                # Convert glob pattern to regex
-                regex_pattern = pattern.replace("*", ".*")
-                if re.search(regex_pattern, url, re.I):
+                if re.search(pattern, url, re.I):
                     filtered.append(url)
-            elif any(re.search(p, url, re.I) for p in default_patterns):
+            else:
+                # No pattern - trust the map results, include all non-excluded URLs
                 filtered.append(url)
 
         return filtered

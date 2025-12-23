@@ -83,10 +83,12 @@ def discover_urls(client: FirecrawlClient, source: WebAggregatorSource) -> list[
             discovered_urls = client._filter_event_urls(all_links, None)
     else:
         # Default: use map (fast path, works for most sites)
+        # Use profile's learned regex, with user override taking precedence
+        pattern = source.event_url_pattern or (profile.event_url_regex if profile else None)
         discovered_urls = client.discover_event_urls(
             url=source.url,
             max_urls=source.max_pages,
-            event_url_pattern=source.event_url_pattern,
+            event_url_pattern=pattern,
         )
 
     return discovered_urls
