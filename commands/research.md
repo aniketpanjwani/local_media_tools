@@ -47,7 +47,7 @@ The CLI tool handles:
 4. **Web Aggregators:** Run `cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py scrape --all --limit 20`
 5. **Facebook:** Pass event URLs directly (e.g., `/research https://facebook.com/events/123`)
 6. **Classify posts:** Read and follow `$PLUGIN_DIR/skills/newsletter-events-research/workflows/research-instagram.md` Steps 3-7 to classify posts and extract events
-7. **Extract web events:** Parse the JSON from cli_web.py and extract events from each page's markdown
+7. **Extract web events:** Use `cli_web.py list-pages` and `read-page` to process pages one at a time (see below)
 8. Report summary with `cd "$PLUGIN_DIR" && uv run python scripts/cli_instagram.py show-stats`
 
 ## Classification (Step 6 Details)
@@ -65,12 +65,39 @@ After scraping, you MUST classify each unclassified post:
 
 ## Web Aggregator Event Extraction (Step 7 Details)
 
-The `cli_web.py scrape` command outputs JSON with page content. For each page:
+**CRITICAL: Do NOT read raw JSON files from `data/raw/`. Use CLI commands instead.**
 
-1. **Read the markdown** from the `markdown` field
-2. **Extract event details:** title, date, time, venue, description, price
-3. **Save events** to the database (see workflow for Python snippet)
-4. **Mark URL as scraped:** `cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py mark-scraped --source "Name" --url "URL" --events-count N`
+After scraping, process pages one at a time:
+
+### 7a. List all scraped pages
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py list-pages
+```
+
+### 7b. Read each page individually
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py read-page --source "Source Name" --index 0
+```
+
+### 7c. Extract event details from the markdown output
+Look for: title, date (YYYY-MM-DD), time (HH:MM 24hr), venue, description, price
+
+### 7d. Save each event
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_events.py save --json '{
+  "title": "Event Name",
+  "venue_name": "Venue",
+  "event_date": "2025-01-20",
+  "start_time": "19:30",
+  "source": "web_aggregator",
+  "source_url": "https://..."
+}'
+```
+
+### 7e. Mark source as scraped when done
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py mark-scraped --source "Name" --url "URL" --events-count N
+```
 
 Skip pages that are navigation/category listings without specific event details.
 
