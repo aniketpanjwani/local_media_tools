@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.5] - 2025-12-22
+
+### Added
+- **`scrape_wait_for` discovery method**: For JavaScript-heavy sites like Eventbrite
+  - Profiler now stores actual method that worked (map, scrape_wait_for, or crawl)
+  - Research uses the stored method instead of always trying map first
+  - Eventbrite and similar JS sites now work correctly
+
+### Fixed
+- Eventbrite returned 0 URLs because profiler stored "map" even when scrape+wait_for worked
+
 ## [0.17.4] - 2025-12-22
 
 ### Fixed

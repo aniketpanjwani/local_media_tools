@@ -53,9 +53,11 @@ def discover_urls(client: FirecrawlClient, source: WebAggregatorSource) -> list[
     Returns list of discovered event page URLs.
     """
     profile = source.profile
+    pattern = source.event_url_pattern or (profile.event_url_regex if profile else None)
+    discovery_method = profile.discovery_method if profile else "map"
 
-    if profile and profile.discovery_method == "crawl":
-        # Use crawl with stored parameters (profile says map failed for this site)
+    if discovery_method == "crawl":
+        # Use crawl (profile says map and scrape failed for this site)
         print(f"  Using crawl (per profile)...", file=sys.stderr)
         crawl_result = client.app.crawl(
             source.url,
@@ -74,17 +76,35 @@ def discover_urls(client: FirecrawlClient, source: WebAggregatorSource) -> list[
                 if hasattr(page, "links"):
                     all_links.extend(page.links)
 
-        # Filter using learned regex from profile (or user override)
-        pattern = source.event_url_pattern or (profile.event_url_regex if profile else None)
+        # Filter using learned regex
         if pattern:
             discovered_urls = [u for u in all_links if re.search(pattern, u)]
         else:
-            # Fallback to default patterns
             discovered_urls = client._filter_event_urls(all_links, None)
+
+    elif discovery_method == "scrape_wait_for":
+        # Use scrape with wait_for (JS-heavy site like Eventbrite)
+        print(f"  Using scrape with wait_for (per profile)...", file=sys.stderr)
+        scrape_result = client.app.scrape(
+            source.url,
+            formats=["links"],
+            wait_for=3000,  # Wait 3 seconds for JS to render
+        )
+
+        all_links = []
+        if hasattr(scrape_result, "links"):
+            all_links = scrape_result.links or []
+        elif isinstance(scrape_result, dict):
+            all_links = scrape_result.get("links", [])
+
+        # Filter using learned regex
+        if pattern:
+            discovered_urls = [u for u in all_links if re.search(pattern, u)]
+        else:
+            discovered_urls = client._filter_event_urls(all_links, None)
+
     else:
         # Default: use map (fast path, works for most sites)
-        # Use profile's learned regex, with user override taking precedence
-        pattern = source.event_url_pattern or (profile.event_url_regex if profile else None)
         discovered_urls = client.discover_event_urls(
             url=source.url,
             max_urls=source.max_pages,

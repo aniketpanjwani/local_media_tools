@@ -176,7 +176,7 @@ def profile_source(url: str) -> dict:
                 all_links = scrape_result.get("links", [])
 
             event_urls = filter_urls(all_links)
-            discovery_method = "map"  # Still use "map" in schema (scrape is just the technique)
+            discovery_method = "scrape_wait_for"  # JS-heavy site needs wait_for
             print(
                 f"  Scrape with wait_for found {len(all_links)} total, {len(event_urls)} content URLs",
                 file=sys.stderr,

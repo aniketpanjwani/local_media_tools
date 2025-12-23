@@ -70,7 +70,7 @@ Old plugin versions accumulate in `~/.claude/plugins/cache/` (~30-40MB each). To
 
 ```bash
 # Remove all old versions, keep only current (check version in plugin.json first)
-ls ~/.claude/plugins/cache/local-media-tools/newsletter-events/ | grep -v "0.17.4" | xargs -I {} rm -rf ~/.claude/plugins/cache/local-media-tools/newsletter-events/{}
+ls ~/.claude/plugins/cache/local-media-tools/newsletter-events/ | grep -v "CURRENT_VERSION" | xargs -I {} rm -rf ~/.claude/plugins/cache/local-media-tools/newsletter-events/{}
 ```
 
 ## Support

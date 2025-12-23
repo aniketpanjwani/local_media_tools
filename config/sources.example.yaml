@@ -152,6 +152,16 @@ sources:
     #     notes: "Statewide coverage. Events have numeric IDs."
     #     profiled_at: "2025-01-15T10:30:00"
     #
+    # JavaScript-heavy site (e.g., Eventbrite) - needs wait_for:
+    # - url: "https://www.eventbrite.com/d/canada--winnipeg/events/"
+    #   name: "Eventbrite Winnipeg"
+    #   source_type: "listing"
+    #   max_pages: 50
+    #   profile:
+    #     discovery_method: "scrape_wait_for"  # JS site, needs wait for render
+    #     event_url_regex: "/e/[^/]+-tickets-\\d+"
+    #     notes: "Eventbrite uses JS rendering, map returns 0 URLs."
+    #
     # To manually refresh an event page after it's been scraped:
     #   /newsletter-events:update-event https://hvmag.com/events/jazz-night
 

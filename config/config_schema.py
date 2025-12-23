@@ -73,9 +73,9 @@ class WebAggregatorProfile(BaseModel):
     /research to avoid re-discovering on every run.
     """
 
-    discovery_method: Literal["map", "crawl"] = Field(
+    discovery_method: Literal["map", "scrape_wait_for", "crawl"] = Field(
         "map",
-        description="Whether to use Firecrawl map (fast) or crawl (thorough)",
+        description="How to discover URLs: map (fast), scrape_wait_for (JS sites), crawl (thorough)",
     )
     crawl_depth: int = Field(
         2,
