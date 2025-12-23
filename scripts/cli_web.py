@@ -309,6 +309,127 @@ def cmd_mark_scraped(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_list_pages(args: argparse.Namespace) -> int:
+    """List scraped pages from the most recent scrape run."""
+    # Find most recent raw files
+    if not TEMP_RAW_DIR.exists():
+        print("No scraped data found. Run 'scrape' first.", file=sys.stderr)
+        return 1
+
+    raw_files = sorted(TEMP_RAW_DIR.glob("web_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+
+    if not raw_files:
+        print("No scraped data found. Run 'scrape' first.", file=sys.stderr)
+        return 1
+
+    # Filter by source if specified
+    if args.source:
+        source_pattern = args.source.replace(" ", "_")
+        raw_files = [f for f in raw_files if source_pattern in f.name]
+        if not raw_files:
+            print(f"No scraped data for source '{args.source}'", file=sys.stderr)
+            return 1
+
+    # Collect pages from files (most recent per source)
+    seen_sources = set()
+    all_pages = []
+
+    for raw_file in raw_files:
+        # Extract source name from filename: web_Source_Name_20251222_221709.json
+        parts = raw_file.stem.split("_")
+        if len(parts) >= 4:
+            # Source name is between "web_" and the timestamp
+            source_name = " ".join(parts[1:-2])  # Skip "web" and last 2 (date, time)
+        else:
+            source_name = "Unknown"
+
+        # Only use most recent file per source
+        if source_name in seen_sources:
+            continue
+        seen_sources.add(source_name)
+
+        try:
+            with open(raw_file) as f:
+                pages = json.load(f)
+
+            for i, page in enumerate(pages):
+                all_pages.append({
+                    "index": i,
+                    "source": page.get("source_name", source_name),
+                    "title": page.get("title", "")[:60],
+                    "url": page.get("original_url", ""),
+                    "scraped_at": page.get("scraped_at", ""),
+                    "file": str(raw_file),
+                })
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error reading {raw_file}: {e}", file=sys.stderr)
+
+    if not all_pages:
+        print("No pages found in scraped data.", file=sys.stderr)
+        return 1
+
+    # Output
+    if args.json:
+        print(json.dumps(all_pages, indent=2))
+    else:
+        print(f"\n{'Idx':>4} {'Source':<25} {'Title':<40}")
+        print("-" * 75)
+        for p in all_pages:
+            print(f"{p['index']:>4} {p['source']:<25} {p['title']:<40}")
+        print(f"\nTotal: {len(all_pages)} pages")
+        print(f"\nUse 'read-page --source \"Name\" --index N' to read a page's content")
+
+    return 0
+
+
+def cmd_read_page(args: argparse.Namespace) -> int:
+    """Read a single page's markdown content from scraped data."""
+    if not TEMP_RAW_DIR.exists():
+        print("No scraped data found. Run 'scrape' first.", file=sys.stderr)
+        return 1
+
+    # Find the file for this source
+    source_pattern = args.source.replace(" ", "_")
+    raw_files = sorted(
+        [f for f in TEMP_RAW_DIR.glob("web_*.json") if source_pattern in f.name],
+        key=lambda p: p.stat().st_mtime,
+        reverse=True
+    )
+
+    if not raw_files:
+        print(f"No scraped data for source '{args.source}'", file=sys.stderr)
+        return 1
+
+    # Use most recent file
+    raw_file = raw_files[0]
+
+    try:
+        with open(raw_file) as f:
+            pages = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Error reading {raw_file}: {e}", file=sys.stderr)
+        return 1
+
+    if args.index >= len(pages):
+        print(f"Index {args.index} out of range. Source has {len(pages)} pages (0-{len(pages)-1}).", file=sys.stderr)
+        return 1
+
+    page = pages[args.index]
+
+    if args.json:
+        # Output full page data
+        print(json.dumps(page, indent=2))
+    else:
+        # Output just the markdown for easy processing
+        print(f"# Page {args.index}: {page.get('title', 'Untitled')}")
+        print(f"# URL: {page.get('original_url', '')}")
+        print(f"# Source: {page.get('source_name', args.source)}")
+        print()
+        print(page.get("markdown", ""))
+
+    return 0
+
+
 def cmd_show_stats(args: argparse.Namespace) -> int:
     """Show statistics about web aggregator scraping."""
     storage = get_storage()
@@ -405,6 +526,19 @@ Examples:
     mark_parser.add_argument("--url", type=str, required=True, help="URL that was scraped")
     mark_parser.add_argument("--events-count", type=int, default=0, help="Number of events extracted")
     mark_parser.set_defaults(func=cmd_mark_scraped)
+
+    # list-pages command
+    list_parser = subparsers.add_parser("list-pages", help="List scraped pages from most recent run")
+    list_parser.add_argument("--source", type=str, help="Filter to specific source")
+    list_parser.add_argument("--json", action="store_true", help="Output JSON")
+    list_parser.set_defaults(func=cmd_list_pages)
+
+    # read-page command
+    read_parser = subparsers.add_parser("read-page", help="Read a single page's markdown content")
+    read_parser.add_argument("--source", type=str, required=True, help="Source name")
+    read_parser.add_argument("--index", type=int, required=True, help="Page index (from list-pages)")
+    read_parser.add_argument("--json", action="store_true", help="Output full JSON (not just markdown)")
+    read_parser.set_defaults(func=cmd_read_page)
 
     # show-stats command
     stats_parser = subparsers.add_parser("show-stats", help="Show scraping statistics")

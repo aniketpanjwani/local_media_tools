@@ -1,29 +1,30 @@
 # Workflow: Extract Events from Scraped Pages
 
 <purpose>
-Given JSON from the scrape workflow, extract events and save them using the CLI.
+After Phase 1 scrapes pages, extract events page-by-page using CLI tools.
 </purpose>
 
 <critical>
-YOU MUST USE cli_events.py TO SAVE EVENTS.
+YOU MUST USE CLI TOOLS FOR ALL DATA ACCESS.
 
 DO NOT:
+- Read files from data/raw/ directly
 - Import Python modules
 - Read source code files
-- Read files from data/raw/
 - Write inline Python scripts
 - Use SqliteStorage or EventCollection directly
+
+THE ONLY WAY TO ACCESS PAGES:
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py list-pages
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py read-page --source "Name" --index N
+```
 
 THE ONLY WAY TO SAVE EVENTS:
 ```bash
 cd "$PLUGIN_DIR" && uv run python scripts/cli_events.py save --json '{...}'
 ```
 </critical>
-
-<input>
-JSON array of scraped pages from `research-web-scrape.md`.
-Each page has `markdown` content to analyze.
-</input>
 
 <process>
 
@@ -35,21 +36,47 @@ cat ~/.claude/plugins/installed_plugins.json | jq -r '.plugins["newsletter-event
 
 Save as `PLUGIN_DIR`.
 
-## Step 2: Extract Events from Each Page
+## Step 2: List All Scraped Pages
 
-For each page in the JSON:
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py list-pages
+```
 
-1. Read the `markdown` field
-2. Look for event details:
-   - **Title**: Event name
-   - **Date**: Convert to YYYY-MM-DD
-   - **Time**: Convert to HH:MM (24-hour) or null
-   - **Venue**: Name and city
-   - **Description**: 1-2 sentences
-   - **Category**: music, art, food_drink, community, outdoor, market, workshop, other
-   - **Price**: Ticket price, "Free", or null
+This shows all pages from the most recent scrape with their index numbers.
+Output example:
+```
+ Idx Source                    Title
+---------------------------------------------------------------------------
+   0 Tourism Winnipeg          Winter Festival 2025
+   1 Tourism Winnipeg          Jazz Night at The Park
+   2 Eventbrite Winnipeg       Tech Meetup - December
+...
+```
 
-3. Skip pages without event information (navigation, category listings)
+## Step 3: Process Pages One at a Time
+
+For EACH page, in order:
+
+### 3a. Read the page content
+
+```bash
+cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py read-page --source "Source Name" --index 0
+```
+
+This outputs the page's markdown content.
+
+### 3b. Extract event details from the markdown
+
+Look for:
+- **Title**: Event name
+- **Date**: Convert to YYYY-MM-DD
+- **Time**: Convert to HH:MM (24-hour) or null
+- **Venue**: Name and city
+- **Description**: 1-2 sentences
+- **Category**: music, art, food_drink, community, outdoor, market, workshop, other
+- **Price**: Ticket price, "Free", or null
+
+Skip pages without event information (navigation, category listings).
 
 ### Time Conversion
 
@@ -61,9 +88,7 @@ For each page in the JSON:
 | "All day" | null |
 | Not found | null |
 
-## Step 3: Save Each Event with CLI
-
-For EACH extracted event, run:
+### 3c. Save the event
 
 ```bash
 cd "$PLUGIN_DIR" && uv run python scripts/cli_events.py save --json '{
@@ -83,15 +108,19 @@ cd "$PLUGIN_DIR" && uv run python scripts/cli_events.py save --json '{
 **Required fields:** title, venue_name, event_date
 **Optional fields:** venue_city, start_time, source, source_url, description, category, price
 
-## Step 4: Mark URLs as Scraped
+### 3d. Move to next page
 
-After saving events from a page:
+Increment index and repeat steps 3a-3c.
+
+## Step 4: Mark Source as Scraped
+
+After processing all pages from a source:
 
 ```bash
 cd "$PLUGIN_DIR" && uv run python scripts/cli_web.py mark-scraped \
   --source "Source Name" \
-  --url "https://example.com/events/page" \
-  --events-count 1
+  --url "https://example.com" \
+  --events-count N
 ```
 
 ## Step 5: Show Statistics
@@ -103,8 +132,9 @@ cd "$PLUGIN_DIR" && uv run python scripts/cli_events.py stats
 </process>
 
 <success_criteria>
-- [ ] Events extracted from markdown (not source code)
+- [ ] Used `list-pages` to enumerate pages (NOT read raw files)
+- [ ] Used `read-page` to read each page (NOT Read tool on data/raw/)
 - [ ] Each event saved with `cli_events.py save --json`
-- [ ] URLs marked as scraped with `cli_web.py mark-scraped`
+- [ ] Sources marked as scraped with `cli_web.py mark-scraped`
 - [ ] Statistics shown
 </success_criteria>
