@@ -64,6 +64,15 @@ Then:
 - **Database:** `~/.config/local-media-tools/data/events.db`
 - **Newsletters:** `newsletter_YYYY-MM-DD.md` in current directory
 
+## Maintenance
+
+Old plugin versions accumulate in `~/.claude/plugins/cache/` (~30-40MB each). To clean up:
+
+```bash
+# Remove all old versions, keep only current (check version in plugin.json first)
+ls ~/.claude/plugins/cache/local-media-tools/newsletter-events/ | grep -v "0.17.4" | xargs -I {} rm -rf ~/.claude/plugins/cache/local-media-tools/newsletter-events/{}
+```
+
 ## Support
 
 - **Issues:** [GitHub Issues](https://github.com/aniketpanjwani/local_media_tools/issues)
