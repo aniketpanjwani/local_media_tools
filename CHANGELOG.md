@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.6] - 2025-12-22
+
+### Changed
+- **Split web aggregator workflow into two phases** to prevent Claude from writing inline Python
+  - `research-web-scrape.md` (Phase 1): Only scrapes, returns JSON
+  - `research-web-extract.md` (Phase 2): Extracts events from JSON, saves with CLI only
+  - `research-web-aggregator.md` now dispatches to these phases in sequence
+  - Strong `<critical>` blocks enforce CLI usage in each phase
+
+### Fixed
+- Claude was ignoring CLI tools and writing custom Python scripts to save events
+
 ## [0.17.5] - 2025-12-22
 
 ### Added

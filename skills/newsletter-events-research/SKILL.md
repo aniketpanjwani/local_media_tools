@@ -101,7 +101,9 @@ All domain knowledge in `references/`:
 |----------|---------|
 | research-instagram.md | Scrape Instagram, download images, extract events |
 | research-facebook.md | Scrape individual Facebook event URLs |
-| research-web-aggregator.md | Scrape web event aggregator sites |
+| research-web-aggregator.md | Dispatcher for web scraping (calls scrape + extract) |
+| research-web-scrape.md | Phase 1: Scrape pages, return JSON |
+| research-web-extract.md | Phase 2: Extract events from JSON, save via CLI |
 | research-all.md | Run all research workflows |
 </workflows_index>
 
