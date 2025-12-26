@@ -1,7 +1,7 @@
 # Local Media Tools
 
 [![Video Tutorial](assets/video-thumbnail.png)](https://www.youtube.com/watch?v=PztrCRdEwYc)
-*▶️ Watch: I Made a Claude Code Plugin to Automate Local Media*
+<p align="center"><b><a href="https://www.youtube.com/watch?v=PztrCRdEwYc">▶️ Watch: I Made a Claude Code Plugin to Automate Local Media</a></b></p>
 
 A Claude Code plugin for scraping local events from Instagram and web sources, with support for ad-hoc Facebook event URLs.
 
