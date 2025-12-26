@@ -1,6 +1,7 @@
 # Local Media Tools
 
-![Research output showing scraped events](assets/research-output.png)
+[![Video Tutorial](assets/video-thumbnail.png)](https://www.youtube.com/watch?v=PztrCRdEwYc)
+*▶️ Watch: I Made a Claude Code Plugin to Automate Local Media*
 
 A Claude Code plugin for scraping local events from Instagram and web sources, with support for ad-hoc Facebook event URLs.
 
@@ -16,6 +17,8 @@ Create hyper-local event newsletters by aggregating events from:
 - **Web Aggregators** - Event listing websites via Firecrawl
 
 Events are deduplicated, stored in SQLite, and formatted according to your preferences.
+
+![Research output showing scraped events](assets/research-output.png)
 
 ## Quick Start
 
